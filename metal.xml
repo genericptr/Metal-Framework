@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<frameworks>
+
+	<framework>
+		<parent>foundation_base</parent>
+		<name>Foundation</name>
+	</framework>
+			
+	<framework>
+		<parent>foundation_base</parent>
+		<name>Metal</name>
+		<replacement_patterns>
+			<!-- clang macros -->
+			<pattern>
+				<pattern>/\b(nullable|nonnull|__nullable|_Null_unspecified|__nonnull|__autoreleasing)+\b/i</pattern>
+				<replacement></replacement>
+			</pattern>
+			<pattern>
+				<pattern>/(__TVOS|__IOS|__OSX)+_UNAVAILABLE/</pattern>
+				<replacement></replacement>
+			</pattern>
+			<pattern>
+				<pattern>/(__TVOS|__IOS|__OSX)+_AVAILABLE\([0-9, _]+\)/</pattern>
+				<replacement></replacement>
+			</pattern>
+			<pattern>
+				<pattern>/(NS_STRING_ENUM)/</pattern>
+				<replacement></replacement>
+			</pattern>
+			<pattern>
+				<pattern>/(NS_SWIFT_NAME\(.*\))/</pattern>
+				<replacement></replacement>
+			</pattern>
+			<!-- NSArray types, i.e. NSArray<NSValue *> -->
+			<pattern>
+				<pattern>/NSArray\s*&lt;(\w+)\s*\*&gt;/</pattern>
+				<replacement>NSArray{$1}</replacement>
+			</pattern>
+		</replacement_patterns>
+	</framework>
+					
+	<framework>
+		<parent>Metal</parent>
+		<name>MetalKit</name>
+	</framework>
+
+</frameworks>

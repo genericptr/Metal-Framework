@@ -1,0 +1,1 @@
+{$mode objfpc}{$modeswitch objectivec1}program MetalKitExample;uses	AppDelegate, CocoaAll, Strings;var	argc: LongInt;	argv: PChar;begin	NSApplicationMain(argc, @argv);end.

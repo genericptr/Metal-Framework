@@ -1,0 +1,27 @@
+
+COMPILER:
+
+  Version = "3.1.1"
+  # Intel 64-bit = ppcx64, Intel 32-bit = ppc386
+  Architecture = "ppcx64"
+  Minimum System Version = "10.8"
+  SDK = "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+
+BUNDLE:
+
+  CFBundleName = "$product_name"
+  CFBundleDevelopmentRegion = "English"
+  CFBundleIdentifier = "com.$company.$product_name"
+  CFBundleExecutable = "$product_name"
+
+OPTIONS:
+  
+  # -Xs-       Strip all symbols from executable
+  # -Xg        Create debuginfo in a separate file and add a debuglink section to executable
+  # -gw        Generate DWARFv2 debug information (same as -gw2)
+
+  -Xg
+  -Xs-
+  -vbr
+  -godwarfcpp
+  -gw

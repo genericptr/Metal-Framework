@@ -1,0 +1,19 @@
+
+COMMON:
+
+  Parent = "settings-console.todo"
+  Bundle = "$project/$product_name.app"
+  Info.Plist = "$project/Info.plist"
+
+OPTIONS:
+
+  *-k"-rpath @loader_path/Frameworks"
+  -k"-rpath @loader_path/../Frameworks"
+
+ RESOURCE PATHS:
+
+   $project/Resources -> $bundle/Contents/Resources
+
+SOURCE PATHS:
+
+  ~/Desktop/metal/files
