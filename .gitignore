@@ -1,4 +1,3 @@
-.vscode
 *.o
 *.ppu
 Bundle.Debug.ppcx64

@@ -1,0 +1,28 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "fpc -DONT_BUILD_IN_VSCODE ${config:fpc.binary}",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            
+            "problemMatcher": {
+                "owner": "external",
+                "pattern": {
+                    //|Warning|Note
+                    "regexp": "^([\\w]+\\.(p|pp|pas))\\((\\d+)\\,(\\d+)\\)\\s(Fatal|Error):(.*)",
+                    "file": 1,
+                    "line": 3,
+                    "column": 4,
+                    "message": 6
+                }
+            }
+        }
+    ]
+}
