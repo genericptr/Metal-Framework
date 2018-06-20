@@ -22,6 +22,12 @@ type
 //typedef __attribute__((__ext_vector_type__(2))) float simd_float2;
 
 type
+	vector_float3 = record
+		x, y, z: simd_float;
+	end;
+
+
+type
 	vector_float2 = record
 		x, y: simd_float;
 
@@ -53,9 +59,17 @@ type
 	end;
 
 function V2(x, y: simd_float): vector_float2;
+function V3(x, y, z: simd_float): vector_float3;
 function V4(x, y, z, w: simd_float): vector_float4;
 
 implementation
+
+function V3(x, y, z: simd_float): vector_float3;
+begin
+	result.x := x;
+	result.y := y;
+	result.z := z;
+end;
 
 function V2(x, y: simd_float): vector_float2;
 begin

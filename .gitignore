@@ -2,3 +2,4 @@
 *.ppu
 Bundle.Debug.ppcx64
 command.txt
+lazarus/lib

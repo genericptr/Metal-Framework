@@ -33,6 +33,7 @@ procedure MTLSetVertexBuffer (api: TMetalAPI; buffer: MTLBufferProtocol; offset:
 procedure MTLSetVertexBytes (api: TMetalAPI; bytes: pointer; len: NSUInteger; index: NSUInteger);
 procedure MTLSetFragmentTexture (api: TMetalAPI; texture: MTLTextureProtocol; index: NSUInteger);
 procedure MTLSetViewPort (api: TMetalAPI; constref viewport: MTLViewport);
+procedure MTLSetCullMode (api: TMetalAPI; mode: integer);
 procedure MTLBeginFrame (api: TMetalAPI; view: MTKView);
 procedure MTLEndFrame (api: TMetalAPI);
 procedure MTLFree (var api: TMetalAPI);
@@ -48,6 +49,15 @@ begin
 	end;
 end;
 
+procedure MTLSetCullMode (api: TMetalAPI; mode: integer);
+begin
+	with api do begin
+	Fatal(renderEncoder = nil, 'no frame in stack.');
+	renderEncoder.setCullMode(mode);
+	end;
+end;
+
+
 procedure MTLSetViewPort (api: TMetalAPI; constref viewport: MTLViewport);
 begin
 	with api do begin
@@ -55,8 +65,7 @@ begin
 	renderEncoder.setViewport(viewport);
 	end;
 end;
-
-			
+		
 procedure MTLSetFragmentTexture (api: TMetalAPI; texture: MTLTextureProtocol; index: NSUInteger);
 begin
 	with api do begin

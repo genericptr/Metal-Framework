@@ -8,16 +8,16 @@
 			"path": "Settings"
 		},
 		{
-			"path": "/Users/ryanjoseph/Desktop/metal/files/metal"
-		},
-		{
-			"path": "/Users/ryanjoseph/Desktop/metal/files/metalkit"
-		},
-		{
 			"path": "/Developer/ObjectivePascal/MacOS_10_10"
 		},
 		{
 			"path": "Shaders"
+		},
+		{
+			"path": "/Users/ryanjoseph/Desktop/Metal-Framework/files/metal"
+		},
+		{
+			"path": "/Users/ryanjoseph/Desktop/Metal-Framework/files/metalkit"
 		}
 	]
 }

@@ -4,10 +4,11 @@
 unit AppDelegate;
 interface
 uses
-	MTKRenderer_HelloTriangle,
+	//MTKRenderer_HelloTriangle,
 	//MTKRenderer_BasicBuffers,
 	//MTKRenderer_BasicTexturing,
 	//MTKRenderer_API,
+	MTKRenderer_Cube,
 	MetalKit, Metal, CocoaAll;
 
 type

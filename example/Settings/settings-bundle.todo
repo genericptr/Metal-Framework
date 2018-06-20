@@ -10,10 +10,11 @@ OPTIONS:
   *-k"-rpath @loader_path/Frameworks"
   -k"-rpath @loader_path/../Frameworks"
 
- RESOURCE PATHS:
+RESOURCE PATHS:
 
+   $project/Shaders -> $bundle/Contents/Resources
    $project/Resources -> $bundle/Contents/Resources
 
 SOURCE PATHS:
 
-  ~/Desktop/metal/files
+  ../files
