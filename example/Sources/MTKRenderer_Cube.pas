@@ -67,8 +67,9 @@ procedure TMTKRenderer.drawInMTKView (fromView: MTKView);
 var
 	A, B, C, D, Q, R, S, T: TAAPLVertex;
 var
+	verticies: array of TAAPLVertex;
+var
 	size: single = 150;
-	verticies: array[0..35] of TAAPLVertex;
 	uniforms: TAAPLUniforms;
 	scale: single;
 begin
@@ -82,53 +83,16 @@ begin
 	S := AAPLVertex(-1.0, -1.0, -1.0, 0.0, 0.0, 1.0, 1.0);
 	T := AAPLVertex( 1.0, -1.0, -1.0, 0.1, 0.6, 0.4, 1.0);
 		
-	//Front
-	verticies[0] := A;
-	verticies[1] := B;
-	verticies[2] := C;
-	verticies[3] := A;
-	verticies[4] := C;
-	verticies[5] := D;
-
-	//Back
-	verticies[6] := R;
-	verticies[7] := T;
-	verticies[8] := S;
-	verticies[9] := Q;
-	verticies[10] := R;
-	verticies[11] := S;
-
-	//Left
-	verticies[12] := Q;
-	verticies[13] := S;
-	verticies[14] := B;
-	verticies[15] := Q;
-	verticies[16] := B;
-	verticies[17] := A;
-
-	//Right
-	verticies[18] := D;
-	verticies[19] := C;
-	verticies[20] := T;
-	verticies[21] := D;
-	verticies[22] := T;
-	verticies[23] := R;
-
-	//Top
-	verticies[24] := Q;
-	verticies[25] := A;
-	verticies[26] := D;
-	verticies[27] := Q;
-	verticies[28] := D;
-	verticies[29] := R;
-
-	//Bottom
-	verticies[30] := B;
-	verticies[31] := S;
-	verticies[32] := T;
-	verticies[33] := B;
-	verticies[34] := T;
-	verticies[35] := C;
+	verticies := [
+		A,B,C ,A,C,D,   //Front
+		R,T,S ,Q,R,S,   //Back
+		
+		Q,S,B ,Q,B,A,   //Left
+		D,C,T ,D,T,R,   //Right
+		
+		Q,A,D ,Q,D,R,   //Top
+		B,S,T ,B,T,C    //Bot
+	];
 
 	scale := 0.5;
 
@@ -145,7 +109,7 @@ begin
 
 	MTLBeginFrame(api, view);
 		MTLSetViewPort(api, viewport);
-		MTLSetVertexBytes(api, @verticies, sizeof(verticies), 0);
+		MTLSetVertexBytes(api, pointer(verticies), sizeof(TAAPLVertex) * Length(verticies), 0);
 		MTLSetVertexBuffer(api, uniformBuffer, 0, 1);
 		MTLSetCullMode(api, MTLCullModeFront);
 		MTLDraw(api, MTLPrimitiveTypeTriangle, 0, 36);
