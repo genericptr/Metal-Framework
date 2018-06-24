@@ -25,12 +25,7 @@ implementation
 
 procedure TAppController.applicationDidFinishLaunching(notification: NSNotification);
 begin
-	{$macro on}
-	{$define my_foo:='foo'}
-	{$define do_this(x):='do_this_x'}
-	writeln(my_foo, ' = ', {$I %FPCTARGETCPU%});
-	//writeln(do_this(100));
-
+	
 	// Insert code here to initialize your application 
 	renderView := window.contentView;
  	writeln(renderView.description.utf8string);

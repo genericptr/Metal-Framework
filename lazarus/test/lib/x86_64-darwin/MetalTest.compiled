@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Compiler Value="/usr/local/bin/ppc386" Date="1486907966"/>
+  <Params Value=" -Px86_64 -MObjFPC -Scghi -O1 -gw -gl  -k-framework -kCocoa -l -vewibq -vn-h- -Fi/Developer/Projects/FPC/Metal-Framework/lazarus/test/lib/x86_64-darwin -Fu/Developer/Projects/FPC/Metal-Framework/lazarus/package/lib/x86_64-darwin -Fu/Developer/lazarus/lcl/units/x86_64-darwin/cocoa -Fu/Developer/lazarus/lcl/units/x86_64-darwin -Fu/Developer/lazarus/components/lazutils/lib/x86_64-darwin -Fu/Developer/lazarus/packager/units/x86_64-darwin -Fu/Developer/Projects/FPC/Metal-Framework/lazarus/test/ -FU/Developer/Projects/FPC/Metal-Framework/lazarus/test/lib/x86_64-darwin/ -dLCL -dLCLcocoa MetalTest.lpr"/>
+</CONFIG>
