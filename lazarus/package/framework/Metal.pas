@@ -192,7 +192,7 @@
 unit Metal;
 interface
 
-{linkframework Metal}
+{$linkframework Metal}
 
 uses
 	 CocoaAll, MacOSAll,

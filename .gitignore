@@ -1,5 +1,6 @@
 *.o
 *.ppu
+*.bak
 Bundle.Debug.ppcx64
 command.txt
 lazarus/lib
