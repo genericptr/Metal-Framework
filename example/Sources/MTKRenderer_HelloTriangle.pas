@@ -67,6 +67,101 @@ begin
 	viewport.zfar := 1;
 end;
 
+// https://forums.developer.apple.com/thread/30488
+// https://forums.developer.apple.com/thread/65037
+
+//procedure SaveImage(view: MTKView; path: pchar);
+//var
+//  bitmap: NSBitmapImageRep;
+//  props: NSDictionary;
+//  imageData: NSData;
+//  texture: MTLTextureProtocol;
+//begin  
+//	texture := view.currentDrawable.texture;
+//	show(texture);
+
+
+
+//  bitmap := view.bitmapImageRepForCachingDisplayInRect(view.bounds);
+//  view.cacheDisplayInRect_toBitmapImageRep(view.bounds, bitmap);
+
+//  props := NSDictionary.alloc.init.autorelease;
+//  imageData := bitmap.representationUsingType_properties(NSPNGFileType, props);
+//  imageData.writeToFile_atomically(NSSTR(path), false);
+//end;
+
+(*
+
+
+create MTLBuffer
+let imageBuffer = device.newBufferWithLength( imageByteCount, options: MTLResourceOptions.CPUCacheModeDefaultCache)  
+2. create Blit operation encoder
+let blitEncoder = commandBuffer.blitCommandEncoder()  
+3. copy texture to shared buffer
+blitEncoder.copyFromTexture(texture,  
+                    sourceSlice: 0,  
+                    sourceLevel: 0,  
+                    sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),  
+                    sourceSize: MTLSize.width: width, height: height, depth: 1),  
+                    toBuffer: imageBuffer,  
+                    destinationOffset: 0,  
+                    destinationBytesPerRow: bytesPerRow,  
+                    destinationBytesPerImage: 0)  
+              
+blitEncoder.endEncoding()  
+4. do somthing with buffer content
+            var rawData   = [UInt8](count: width*height*components, repeatedValue: 0)  
+            if texture.pixelFormat == .RGBA16Unorm {  
+                for var i=0; i < rawData.count; i++ {  
+                    var pixel = UInt16()  
+                    let address =  UnsafePointer<UInt16>(imageBuffer.contents())+i  
+                    memcpy(&pixel, address, sizeof(UInt16))  
+                    rawData[i] = UInt8(pixel>>8)  
+                }  
+            }  
+            else{  
+                memcpy(&rawData, imageBuffer.contents(), imageBuffer.length)  
+            }  
+           
+            let cgprovider = 
+*)
+
+procedure SaveImage(view: MTKView; path: pchar);
+var
+  texture: MTLTextureProtocol;
+  bytesPerRow: integer;
+  region: MTLRegion;
+  context: CGContextRef;
+  colorSpace: CGColorSpaceRef;
+  image: CGImageRef;
+  bytes: pointer;
+begin  
+	texture := view.currentDrawable.texture;
+	show(texture);
+
+	// todo: force size
+	//textureType = MTLTextureType2D 
+	//pixelFormat = MTLPixelFormatBGRA8Unorm 
+
+	Fatal(texture.textureType <> MTLTextureType2D, 'texture must be 2D');
+
+	bytesPerRow := 4 * texture.width;
+	region := MMTLRegionMake2D(0, 0, texture.width, texture.height);
+
+	bytes := GetMem(bytesPerRow * texture.height);
+	texture.getBytes_bytesPerRow_fromRegion_mipmapLevel(bytes, bytesPerRow, region, 0);
+
+	colorSpace := CGColorSpaceCreateDeviceRGB;
+	
+	context := CGBitmapContextCreate(bytes, trunc(texture.width), trunc(texture.height), 8, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+	image := CGBitmapContextCreateImage(context);
+
+	CFShow(image);
+
+	CGColorSpaceRelease(colorSpace);
+	FreeMem(bytes);
+end;
+
 procedure TMTKRenderer.drawTriangle;
 var
 	size: single = 150;
@@ -85,10 +180,9 @@ begin
 	if renderPassDescriptor <> nil then
 		begin
 			renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
-
-			renderEncoder.setViewport(viewport);
 			renderEncoder.setRenderPipelineState(pipelineState);
 
+			renderEncoder.setViewport(viewport);
 			renderEncoder.setVertexBytes_length_atIndex(@verticies, sizeof(verticies), AAPLVertexInputIndexVertices);
 			renderEncoder.setVertexBytes_length_atIndex(@viewportSize, sizeof(viewportSize), AAPLVertexInputIndexViewportSize);
 
@@ -99,6 +193,9 @@ begin
 		end;
 
 	commandBuffer.commit;
+
+	//SaveImage(view, 'metal-triangle.png');
+	//halt;
 end;
 
 procedure TMTKRenderer.drawInMTKView (fromView: MTKView);

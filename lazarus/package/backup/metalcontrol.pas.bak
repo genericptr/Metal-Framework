@@ -6,9 +6,12 @@ unit MetalControl;
 interface
 
 uses
-	Metal, MetalKit, CocoaAll, MacOSAll,
-  Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs;
+	MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
+  Classes, SysUtils, 
+  LResources,
+  Forms, Controls, Graphics, Dialogs;
 
+// http://wiki.freepascal.org/Lazarus_Packages
 // http://wiki.freepascal.org/How_To_Write_Lazarus_Component
 
 type
@@ -26,49 +29,80 @@ type
 	TMetalBaseControl = class (TWinControl)
 		private
 			FOnPaint: TNotifyEvent;
-		public
+			FOnPrepare: TNotifyEvent;
+		published
 			property OnPaint: TNotifyEvent read FOnPaint write FOnPaint;
+			property OnPrepare: TNotifyEvent read FOnPrepare write FOnPrepare;
 		public
 			renderView: MTKView;
 			viewport: MTLViewport;
 		public
 			constructor Create(AOwner: TComponent); override;
-			procedure LoadMetal;
 		protected
 			procedure RealizeBounds; override;
 			procedure CreateWnd; override;
 			procedure DestroyWnd; override;
+		protected
 			procedure Paint; virtual;
+			procedure Prepare; virtual;
 		private
 			renderer: TMTKRenderer;
+			procedure LoadMetal;
 	end;
 
 type
   TMetalControl = class(TMetalBaseControl)
-  public
+  published
+    property Align;
+    property Alignment;
+    property Anchors;
+    property AutoSize;
+    property BorderSpacing;
+    property Constraints;
+
+  	// TODO: what are the differences between these?? we need to
+  	// to tell the user when the viewport changed but which one do we use?
   	property OnChangeBounds;
+  	property OnConstrainedResize;
+  	property OnResize;
+
+  	property OnKeyDown;
+  	property OnKeyPress;
+  	property OnKeyUp;
+
   	property OnClick;
   	property OnDblClick;
   	property OnEnter;
   	property OnExit;
-  	property OnKeyDown;
-  	property OnKeyPress;
-  	property OnKeyUp;
+
   	property OnMouseDown;
   	property OnMouseMove;
   	property OnMouseUp;
+  	property OnMouseWheel;
+  	property OnMouseWheelDown;
+  	property OnMouseWheelUp;
   end;
+
+function MTLCreatePipeline (control: TMetalControl; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline; overload; inline;
 
 procedure Register;
 
 implementation
 
 {=============================================}
+{@! ___UTILS___ } 
+{=============================================}
+
+function MTLCreatePipeline (control: TMetalControl; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline; overload; inline;
+begin
+	result := MTLCreatePipeline(control.renderView, options);
+end;
+
+{=============================================}
 {@! ___METAL RENDERER___ } 
 {=============================================}
 procedure TMTKRenderer.mtkView_drawableSizeWillChange (fromView: MTKView; size: CGSize);
 begin
-	// NOTE: lazarus already knows when the control changes size so we can safely ignore this
 end;
 
 procedure TMTKRenderer.drawInMTKView (fromView: MTKView);
@@ -76,7 +110,7 @@ begin
 	control.Paint;
 end;
 
-function TMTKRenderer.init (inControl: TMetalControl): TMTKRenderer;
+function TMTKRenderer.init (inControl: TMetalBaseControl): TMTKRenderer;
 begin
 	control := inControl;
 	result := self;
@@ -89,8 +123,7 @@ constructor TMetalBaseControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
 
-  SetInitialBounds(0, 0, 160, 90);
-  //LoadMetal;
+  SetInitialBounds(0, 0, 200, 200);
 end;
 
 procedure TMetalBaseControl.LoadMetal;
@@ -98,7 +131,6 @@ var
  	superview: NSView; 
  	device: MTLDeviceProtocol;
 begin
-	writeln('load metal control');
 
 	// NOTE: do we own this??
 	device := MTLCreateSystemDefaultDevice;
@@ -115,7 +147,6 @@ begin
 
 	// add render view to TWinControl view handle
 	superview := NSView(Handle);
-	writeln('superview: ', superview.description.UTF8String);
 
 	renderView.setFrame(superview.bounds);
 	superview.addSubview(renderView);
@@ -123,14 +154,14 @@ begin
 	// create objc class for render delegate
 	renderer := TMTKRenderer.alloc.init(self);
 	renderView.setDelegate(renderer);
+
+	// let the user setup the pipeline now that metal is loaded
+	Prepare;
 end;
 
 procedure TMetalBaseControl.RealizeBounds;
 begin
 	inherited;
-
-	//if HandleAllocated and not Assigned(renderView) then
-	//	LoadMetal;
 
 	viewport.originX := 0;
 	viewport.originY := 0;
@@ -146,25 +177,24 @@ procedure TMetalBaseControl.CreateWnd;
 begin
 	inherited;
 
-	writeln('TMetalBaseControl.CreateWnd');
 	LoadMetal;
 end;
 
 procedure TMetalBaseControl.DestroyWnd;
 begin
-	writeln('TMetalBaseControl.DestroyWnd');
-
 	renderer.release;	
 
 	inherited;
 end;
 
+procedure TMetalBaseControl.Prepare;
+begin
+	if Assigned(OnPrepare) then OnPrepare(Self);
+end;
+
 procedure TMetalBaseControl.Paint;
 begin
-	//if HandleAllocated and not Assigned(renderView) then
-	//	LoadMetal;
-
-	if Assigned(OnPaint) then OnPaint(Self);
+	if Assigned(OnPaint) and IsVisible then OnPaint(Self);
 end;
 
 {=============================================}

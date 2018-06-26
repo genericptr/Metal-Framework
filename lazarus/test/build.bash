@@ -1,7 +1,7 @@
 #!/bin/bash
 
 PROJECT="MetalTest"
-lazbuild $PROJECT.lpr
+/Developer/lazarus/lazbuild $PROJECT.lpr
 if [ $? -eq 0 ]; then
 # 	BUNDLE="$PROJECT.app/Contents/MacOS/$PROJECT"
 

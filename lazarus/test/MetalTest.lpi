@@ -10,13 +10,19 @@
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
     </General>
-    <MacroValues Count="1">
+    <VersionInfo>
+      <Language Value=""/>
+      <CharSet Value=""/>
+    </VersionInfo>
+    <MacroValues Count="3">
       <Macro1 Name="LCLWidgetType" Value="cocoa"/>
+      <Macro2 Name="LCLWidgetType" Value="cocoa"/>
     </MacroValues>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
-      <SharedMatrixOptions Count="1">
+      <SharedMatrixOptions Count="2">
         <Item1 ID="993454293269" Modes="Default" Type="IDEMacro" MacroName="LCLWidgetType" Value="cocoa"/>
+        <Item2 ID="704827183185" Modes="Default" Type="IDEMacro" MacroName="LCLWidgetType" Value="cocoa"/>
       </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>
@@ -60,7 +66,8 @@
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>
-      <TargetProcessor Value="1"/>
+      <TargetCPU Value="x86_64"/>
+      <TargetOS Value="darwin"/>
     </CodeGeneration>
     <Linking>
       <Options>

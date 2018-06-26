@@ -6,9 +6,8 @@ unit MetalControl;
 interface
 
 uses
-	MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
+	MetalTypes, MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
   Classes, SysUtils, 
-  //LCLType, LCLIntf, LResources, LCLProc,
   LResources,
   Forms, Controls, Graphics, Dialogs;
 
@@ -54,6 +53,12 @@ type
 type
   TMetalControl = class(TMetalBaseControl)
   published
+    property Align;
+    property Anchors;
+    property AutoSize;
+    property BorderSpacing;
+    property Constraints;
+
   	// TODO: what are the differences between these?? we need to
   	// to tell the user when the viewport changed but which one do we use?
   	property OnChangeBounds;

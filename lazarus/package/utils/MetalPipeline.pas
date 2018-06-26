@@ -7,8 +7,6 @@ interface
 uses
 	MetalUtils, Metal, MetalKit, CocoaAll, SysUtils;
 
-// https://developer.apple.com/library/archive/documentation/Miscellaneous/Conceptual/MetalProgrammingGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40014221-CH1-SW1
-
 type
 	TMetalPipeline = class
 		view: MTKView;
@@ -17,25 +15,33 @@ type
 		commandQueue: MTLCommandQueueProtocol;
 		commandBuffer: MTLCommandBufferProtocol;
 		renderEncoder: MTLRenderCommandEncoderProtocol;
+
+		// renderPassDescriptor can only be accessed directly after MTLBeginFrame
+		// and will be unlinked after subsequent calls to MTLSetXXX
+		renderPassDescriptor: MTLRenderPassDescriptor;
 	end;
 
 type
 	TMetalPipelineOptions = record
-		libraryName: string;
-		shaderName: string;
-		vertexFunction: string;
-		fragmentFunction: string;
+		libraryName: string;			// path to compiled .metallib file
+		shaderName: string;				// path to .metal shader file which will be compiled at runtime
+		vertexFunction: string;		// name of vertex function in shader file (see TMetalPipelineOptions.Default)
+		fragmentFunction: string;	// name of fragment function in shader file (see TMetalPipelineOptions.Default)
 
 		class function Default: TMetalPipelineOptions; static;
 	end;
 	TMetalPipelineOptionsPtr = ^TMetalPipelineOptions;
 
 procedure MTLDraw (primitiveType: MTLPrimitiveType; vertexStart: NSUInteger; vertexCount: NSUInteger);
+
 procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
 procedure MTLSetVertexBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 procedure MTLSetFragmentTexture (texture: MTLTextureProtocol; index: NSUInteger);
 procedure MTLSetViewPort (constref viewport: MTLViewport);
 procedure MTLSetCullMode (mode: integer);
+
+procedure MTLSetClearColor (r, g, b, a: double);
+
 procedure MTLBeginFrame (pipeline: TMetalPipeline);
 procedure MTLEndFrame;
 
@@ -55,11 +61,24 @@ begin
 	result.fragmentFunction := 'fragmentShader';
 end;
 
+procedure CommitRenderPassEnconder;
+begin
+	with CurrentThreadPipeline do begin
+	Fatal(commandBuffer = nil, 'must call begin frame first.');
+	if renderEncoder = nil then
+		begin
+			renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
+			renderEncoder.setRenderPipelineState(pipelineState);
+			renderPassDescriptor := nil;
+		end;
+	end;
+end;
+
 procedure MTLDraw (primitiveType: MTLPrimitiveType; vertexStart: NSUInteger; vertexCount: NSUInteger);
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
 	with CurrentThreadPipeline do begin
-	Fatal(renderEncoder = nil, 'no frame in stack.');
+	CommitRenderPassEnconder;
 	renderEncoder.drawPrimitives_vertexStart_vertexCount(primitiveType, vertexStart, vertexCount);
 	end;
 end;
@@ -68,7 +87,7 @@ procedure MTLSetCullMode (mode: integer);
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
 	with CurrentThreadPipeline do begin
-	Fatal(renderEncoder = nil, 'no frame in stack.');
+	CommitRenderPassEnconder;
 	renderEncoder.setCullMode(mode);
 	end;
 end;
@@ -77,7 +96,7 @@ procedure MTLSetViewPort (constref viewport: MTLViewport);
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
 	with CurrentThreadPipeline do begin
-	Fatal(renderEncoder = nil, 'no frame in stack.');
+	CommitRenderPassEnconder;
 	renderEncoder.setViewport(viewport);
 	end;
 end;
@@ -86,7 +105,7 @@ procedure MTLSetFragmentTexture (texture: MTLTextureProtocol; index: NSUInteger)
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
 	with CurrentThreadPipeline do begin
-	Fatal(renderEncoder = nil, 'no frame in stack.');
+	CommitRenderPassEnconder;
 	renderEncoder.setFragmentTexture_atIndex(texture, index);
 	end;
 end;
@@ -95,7 +114,7 @@ procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; ind
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
 	with CurrentThreadPipeline do begin
-	Fatal(renderEncoder = nil, 'no frame in stack.');
+	CommitRenderPassEnconder;
 	renderEncoder.setVertexBuffer_offset_atIndex(buffer, offset, index);
 	end;
 end;
@@ -104,28 +123,35 @@ procedure MTLSetVertexBytes (bytes: pointer; len: NSUInteger; index: NSUInteger)
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
 	with CurrentThreadPipeline do begin
-	Fatal(renderEncoder = nil, 'no frame in stack.');
+	CommitRenderPassEnconder;
 	renderEncoder.setVertexBytes_length_atIndex(bytes, len, index);
 	end;
 end;
 
-procedure MTLBeginFrame (pipeline: TMetalPipeline);
+procedure MTLSetClearColor (r, g, b, a: double);
 var
-	renderPassDescriptor: MTLRenderPassDescriptor;
+	clearColor: MTLClearColor;
+	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
+begin
+	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
+	with CurrentThreadPipeline do begin
+	Fatal(renderPassDescriptor = nil, 'already commited current render pass descriptor.');
+	colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+	clearColor.red := r;
+	clearColor.green := g;
+	clearColor.blue:= b;
+	clearColor.alpha := a;
+	colorAttachment.setClearColor(clearColor);
+	end;
+end;
+
+procedure MTLBeginFrame (pipeline: TMetalPipeline);
 begin
 	CurrentThreadPipeline := pipeline;
 	with CurrentThreadPipeline do begin
 	commandBuffer := commandQueue.commandBuffer;
-
-	// use renderPassDescriptor to set attachments like color, depth, stencil
-	// we need to set attachments before renderCommandEncoderWithDescriptor is
-	// called so move this outside of begin if any attachments need to be set
 	renderPassDescriptor := view.currentRenderPassDescriptor;
 	Fatal(renderPassDescriptor = nil, 'views device is not set');
-
-	renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
-
-	renderEncoder.setRenderPipelineState(pipelineState);
 	end;
 end;
 
