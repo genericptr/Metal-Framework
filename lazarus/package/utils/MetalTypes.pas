@@ -6,6 +6,12 @@ interface
 uses
 	Math, SysUtils;
 
+// NOTE: constref is bugged on 3.0.4 and below
+{$macro on}
+{$if FPC_FULLVERSION < 30005}
+{$define constref:=}
+{$endif}
+
 type
 	TScalar = single;
 
@@ -153,25 +159,25 @@ type
 		public
 			property Components[const column, row:integer]:TScalar read GetComponent write SetComponent; default;
 		public
-			class operator := (const a:TScalar):TMat4; inline;
-      class operator = (constref a,b:TMat4):boolean; inline;
-      class operator <> (constref a,b:TMat4):boolean; inline;
-      class operator + (constref a,b:TMat4):TMat4; inline;
-      class operator + (constref a:TMat4;const b:TScalar):TMat4; inline;
-      class operator + (const a:TScalar;constref b:TMat4):TMat4; inline;
-      class operator - (constref a,b:TMat4):TMat4; inline;
-      class operator - (constref a:TMat4;const b:TScalar):TMat4; inline;
-      class operator - (const a:TScalar;constref b:TMat4): TMat4; inline;
-      class operator * (constref b,a:TMat4):TMat4; inline;
-      class operator * (constref a:TMat4;const b:TScalar):TMat4; inline;
-      class operator * (const a:TScalar;constref b:TMat4):TMat4; inline;
-      class operator * (constref a:TMat4;constref b:TVec3):TVec3; inline;
-      class operator * (constref a:TVec3;constref b:TMat4):TVec3; inline;
-      class operator * (constref a:TMat4;constref b:TVec4):TVec4; inline;
-      class operator * (constref a:TVec4;constref b:TMat4):TVec4; inline;
-      class operator / (constref a,b:TMat4):TMat4; inline;
-      class operator / (constref a:TMat4;const b:TScalar):TMat4; inline;
-      class operator / (const a:TScalar;constref b:TMat4):TMat4; inline;
+			class operator := (const a:TScalar):TMat4;
+      class operator = (constref a,b:TMat4):boolean;
+      class operator <> (constref a,b:TMat4):boolean;
+      class operator + (constref a,b:TMat4):TMat4;
+      class operator + (constref a:TMat4;const b:TScalar):TMat4;
+      class operator + (const a:TScalar;constref b:TMat4):TMat4;
+      class operator - (constref a,b:TMat4):TMat4;;
+      class operator - (constref a:TMat4;const b:TScalar):TMat4;
+      class operator - (const a:TScalar;constref b:TMat4): TMat4;
+      class operator * (constref b,a:TMat4):TMat4;
+      class operator * (constref a:TMat4;const b:TScalar):TMat4;
+      class operator * (const a:TScalar;constref b:TMat4):TMat4;
+      class operator * (constref a:TMat4;constref b:TVec3):TVec3;
+      class operator * (constref a:TVec3;constref b:TMat4):TVec3;
+      class operator * (constref a:TMat4;constref b:TVec4):TVec4;
+      class operator * (constref a:TVec4;constref b:TMat4):TVec4;
+      class operator / (constref a,b:TMat4):TMat4;
+      class operator / (constref a:TMat4;const b:TScalar):TMat4;
+      class operator / (const a:TScalar;constref b:TMat4):TMat4;
 		public
 			case integer of
 				0:(m:array[0..3,0..3] of TScalar);
@@ -674,12 +680,12 @@ end;
 
 function TMat4.GetComponent(const column, row:integer):TScalar;
 begin
- result:=m[row,column];
+ result:=m[column,row];
 end;
 
 procedure TMat4.SetComponent(const column, row:integer;const pValue:TScalar);
 begin
- m[row,column]:=pValue;
+ m[column,row]:=pValue;
 end;
 
 function SameValue (a, b: TScalar): boolean; inline;
