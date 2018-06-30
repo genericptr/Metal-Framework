@@ -12,70 +12,113 @@ type
 type
 	TVec2 = record
 		public
-			x, y: TScalar;
-		public
-			function Magnitude: TScalar; inline;
+			function Length: TScalar; inline;
+			function SquaredLength: TScalar; inline;
+			function Normalize: TVec2; inline;
+			function Dot (constref vec: TVec2): TScalar; inline;
+			function Cross (constref vec:TVec2): TVec2; inline;
+			function Negate: TVec2; inline;
+
 			procedure Show;
 			function Str: string;
-			
-			class operator + (p1, p2: TVec2): TVec2; overload;
-			class operator - (p1, p2: TVec2): TVec2; overload; 
-			class operator * (p1, p2: TVec2): TVec2; overload; 
-			class operator / (p1, p2: TVec2): TVec2;  overload;
-			class operator = (p1, p2: TVec2): boolean; 
-			class operator + (p1: TVec2; p2: TScalar): TVec2; overload; 
-			class operator - (p1: TVec2; p2: TScalar): TVec2; overload; 
-			class operator * (p1: TVec2; p2: TScalar): TVec2; overload; 
-			class operator / (p1: TVec2; p2: TScalar): TVec2; overload;
+		
+		private
+			function GetComponent(const pIndex:integer):TScalar; inline;
+      procedure SetComponent(const pIndex:integer;const pValue:TScalar); inline;
+		public
+			property Components[const pIndex:integer]:TScalar read GetComponent write SetComponent; default;	
+		public
+			class operator := (a:TScalar): TVec2;
+			class operator + (constref p1, p2: TVec2): TVec2; overload;
+			class operator - (constref p1, p2: TVec2): TVec2; overload; 
+			class operator * (constref p1, p2: TVec2): TVec2; overload; 
+			class operator / (constref p1, p2: TVec2): TVec2; overload;
+			class operator = (constref p1, p2: TVec2): boolean; 
+			class operator + (constref p1: TVec2; p2: TScalar): TVec2; overload; 
+			class operator - (constref p1: TVec2; p2: TScalar): TVec2; overload; 
+			class operator * (constref p1: TVec2; p2: TScalar): TVec2; overload; 
+			class operator / (constref p1: TVec2; p2: TScalar): TVec2; overload;
+		public
+			case integer of
+				0: (v: array[0..1] of TScalar);
+				1: (x, y: TScalar);
 	end;
 
 type
 	TVec3 = record
 		public
-			class function Make (_x,_y,_z: TScalar): TVec3; static; inline;
 			class function Up: TVec3; static; inline;
 			
-			function Normalize:TVec3;
-			function Cross(const b:TVec3):TVec3;
-			function XY: TVec2;
+			function Length: TScalar; inline;
+			function SquaredLength: TScalar; inline;
+			function Normalize: TVec3; inline;
+			function Dot (constref vec: TVec3): TScalar; inline;
+			function Cross (constref vec:TVec3): TVec3; inline;
+			function Negate: TVec3; inline;
+
+			function XY: TVec2; inline;
 
 			procedure Show;
 			function Str: string;
 
+		private
+			function GetComponent(const pIndex:integer):TScalar; inline;
+      procedure SetComponent(const pIndex:integer;const pValue:TScalar); inline;
 		public
-			class operator + (p1, p2: TVec3): TVec3; overload;
-			class operator - (p1, p2: TVec3): TVec3; overload; 
-			class operator * (p1, p2: TVec3): TVec3; overload; 
-			class operator / (p1, p2: TVec3): TVec3; overload;
-			class operator = (p1, p2: TVec3): boolean; 
-			class operator + (p1: TVec3; p2: TScalar): TVec3; overload; 
-			class operator - (p1: TVec3; p2: TScalar): TVec3; overload; 
-			class operator * (p1: TVec3; p2: TScalar): TVec3; overload; 
-			class operator / (p1: TVec3; p2: TScalar): TVec3; overload;
+			property Components[const pIndex:integer]:TScalar read GetComponent write SetComponent; default;
+		public
+			class operator := (a:TScalar): TVec3;
+			class operator + (constref p1, p2: TVec3): TVec3; overload;
+			class operator - (constref p1, p2: TVec3): TVec3; overload; 
+			class operator * (constref p1, p2: TVec3): TVec3; overload; 
+			class operator / (constref p1, p2: TVec3): TVec3; overload;
+			class operator = (constref p1, p2: TVec3): boolean; 
+			class operator + (constref p1: TVec3; p2: TScalar): TVec3; overload; 
+			class operator - (constref p1: TVec3; p2: TScalar): TVec3; overload; 
+			class operator * (constref p1: TVec3; p2: TScalar): TVec3; overload; 
+			class operator / (constref p1: TVec3; p2: TScalar): TVec3; overload;
 		public
 			case integer of
-				0:
-					(x, y, z: TScalar);
-				1:
-					(r, g, b: TScalar);
+				0: (v: array[0..2] of TScalar);
+				1: (x, y, z: TScalar);
+				2: (r, g, b: TScalar);
+				3: (Pitch,Yaw,Roll:TScalar);
 	end;
 
 type
 	TVec4 = record
+		public
+			function Length: TScalar; inline;
+			function SquaredLength: TScalar; inline;
+			function Normalize: TVec4; inline;
+			function Dot (constref vec: TVec4): TScalar; inline;
+			function Cross(constref vec: TVec4): TVec4; inline;
+			function Negate: TVec4; inline;
+
+			function XY: TVec2; inline;
+			function XYZ: TVec3; inline;
+
+			procedure Show;
+			function Str: string;
 		private
 			function GetComponent(const pIndex:integer):TScalar; inline;
       procedure SetComponent(const pIndex:integer;const pValue:TScalar); inline;
-
-      function XY: TVec2;
-      function XYZ: TVec3;
-      procedure Show;
-      function Str: string;
-
 		public
 			property Components[const pIndex:integer]:TScalar read GetComponent write SetComponent; default;
 		public
+			class operator := (a:TScalar): TVec4;
+			class operator + (constref p1, p2: TVec4): TVec4; overload;
+			class operator - (constref p1, p2: TVec4): TVec4; overload; 
+			class operator * (constref p1, p2: TVec4): TVec4; overload; 
+			class operator / (constref p1, p2: TVec4): TVec4; overload;
+			class operator = (constref p1, p2: TVec4): boolean; 
+			class operator + (constref p1: TVec4; p2: TScalar): TVec4; overload; 
+			class operator - (constref p1: TVec4; p2: TScalar): TVec4; overload; 
+			class operator * (constref p1: TVec4; p2: TScalar): TVec4; overload; 
+			class operator / (constref p1: TVec4; p2: TScalar): TVec4; overload;
+		public
 			case integer of
-				0:(RawComponents:array[0..3] of TScalar);
+				0: (v: array[0..3] of TScalar);
 				1: (x, y, z, w: TScalar);
 				2: (r, g, b, a: TScalar);
 	end;
@@ -95,61 +138,77 @@ type
       constructor RotateY(const Angle:TScalar);
       constructor RotateZ(const Angle:TScalar);
       constructor Rotate(const Angle:TScalar;const Axis:TVec3); overload;
-      constructor Rotate(const pMatrix:TMat4); overload;
+      constructor Rotate(constref pMatrix:TMat4); overload;
 			constructor Ortho (const Left,Right,Bottom,Top,zNear,zFar:TScalar);
 			constructor Perspective (const fovy,Aspect,zNear,zFar:TScalar);
-			constructor LookAt (const Eye,Center,Up:TVec3);
+			constructor LookAt (constref Eye,Center,Up:TVec3);
 			
 			function Inverse:TMat4; inline;
       function Transpose:TMat4; inline;
      
  			procedure Show;
-
+		private
+			function GetComponent(const column, row:integer):TScalar; inline;
+      procedure SetComponent(const column, row:integer;const pValue:TScalar); inline;
+		public
+			property Components[const column, row:integer]:TScalar read GetComponent write SetComponent; default;
 		public
 			class operator := (const a:TScalar):TMat4; inline;
-      class operator = (const a,b:TMat4):boolean; inline;
-      class operator <> (const a,b:TMat4):boolean; inline;
-      class operator + (const a,b:TMat4):TMat4; inline;
-      class operator + (const a:TMat4;const b:TScalar):TMat4; inline;
-      class operator + (const a:TScalar;const b:TMat4):TMat4; inline;
-      class operator - (const a,b:TMat4):TMat4; inline;
-      class operator - (const a:TMat4;const b:TScalar):TMat4; inline;
-      class operator - (const a:TScalar;const b:TMat4): TMat4; inline;
-      class operator * (const b,a:TMat4):TMat4; inline;
-      class operator * (const a:TMat4;const b:TScalar):TMat4; inline;
-      class operator * (const a:TScalar;const b:TMat4):TMat4; inline;
-      class operator * (const a:TMat4;const b:TVec3):TVec3; inline;
-      class operator * (const a:TVec3;const b:TMat4):TVec3; inline;
-      class operator * (const a:TMat4;const b:TVec4):TVec4; inline;
-      class operator * (const a:TVec4;const b:TMat4):TVec4; inline;
-      class operator / (const a,b:TMat4):TMat4; inline;
-      class operator / (const a:TMat4;const b:TScalar):TMat4; inline;
-      class operator / (const a:TScalar;const b:TMat4):TMat4; inline;
+      class operator = (constref a,b:TMat4):boolean; inline;
+      class operator <> (constref a,b:TMat4):boolean; inline;
+      class operator + (constref a,b:TMat4):TMat4; inline;
+      class operator + (constref a:TMat4;const b:TScalar):TMat4; inline;
+      class operator + (const a:TScalar;constref b:TMat4):TMat4; inline;
+      class operator - (constref a,b:TMat4):TMat4; inline;
+      class operator - (constref a:TMat4;const b:TScalar):TMat4; inline;
+      class operator - (const a:TScalar;constref b:TMat4): TMat4; inline;
+      class operator * (constref b,a:TMat4):TMat4; inline;
+      class operator * (constref a:TMat4;const b:TScalar):TMat4; inline;
+      class operator * (const a:TScalar;constref b:TMat4):TMat4; inline;
+      class operator * (constref a:TMat4;constref b:TVec3):TVec3; inline;
+      class operator * (constref a:TVec3;constref b:TMat4):TVec3; inline;
+      class operator * (constref a:TMat4;constref b:TVec4):TVec4; inline;
+      class operator * (constref a:TVec4;constref b:TMat4):TVec4; inline;
+      class operator / (constref a,b:TMat4):TMat4; inline;
+      class operator / (constref a:TMat4;const b:TScalar):TMat4; inline;
+      class operator / (const a:TScalar;constref b:TMat4):TMat4; inline;
 		public
 			case integer of
-				0:(RawComponents:array[0..3,0..3] of TScalar);
+				0:(m:array[0..3,0..3] of TScalar);
 				1:(v: array[0..3] of TVec4);
 				2:(Right,Up,Forwards,Offset:TVec4);
 				3:(Tangent,Bitangent,Normal,Translation:TVec4);
 	end;
-var
-	Matrix4x4Identity:TMat4=(RawComponents:((1.0,0.0,0,0.0),(0.0,1.0,0.0,0.0),(0.0,0.0,1.0,0.0),(0.0,0.0,0,1.0)));
+
+function M4: TMat4;
 
 function Vec2 (x, y: TScalar): TVec2;
-function Vec3 (x, y, z: TScalar): TVec3;
-function Vec4 (x, y, z, w: TScalar): TVec4;
+function Vec3 (x, y, z: TScalar): TVec3; overload;
+function Vec3 (constref vec: TVec2; z: TScalar): TVec3; overload;
+function Vec4 (x, y, z, w: TScalar): TVec4; overload;
+function Vec4 (constref vec: TVec3; w: TScalar): TVec4; overload;
+function Vec4 (constref vec: TVec2; z, w: TScalar): TVec4; overload;
 
 function V2 (x, y: TScalar): TVec2;
-function V3 (x, y, z: TScalar): TVec3;
+function V3 (x, y, z: TScalar): TVec3; overload;
+function V3 (constref vec: TVec2; z: TScalar): TVec3; overload;
 function V4 (x, y, z, w: TScalar): TVec4;
+function V4 (constref vec: TVec3; w: TScalar): TVec4; overload;
+function V4 (constref vec: TVec2; z, w: TScalar): TVec4; overload;
 
 implementation
+
+var
+	Matrix4x4Identity:TMat4=(m:((1.0,0.0,0,0.0),(0.0,1.0,0.0,0.0),(0.0,0.0,1.0,0.0),(0.0,0.0,0,1.0)));
 	
 const
 	DEG2RAD=pi/180.0;
   RAD2DEG=180.0/pi;
   HalfPI=pi*0.5;	
-	
+
+{=============================================}
+{@! ___PROCEDURAL___ } 
+{=============================================}
 function Vec2 (x, y: TScalar): TVec2; inline;
 begin
 	result.x := x;
@@ -161,9 +220,122 @@ begin
 	result := Vec2(x, y);
 end;
 
-function TVec2.Magnitude: TScalar;
+function Vec3 (x, y, z: TScalar): TVec3; inline;
 begin
-	result := Sqrt(Power(x, 2) + Power(y, 2));
+	result.x := x;
+	result.y := y;
+	result.z := z;
+end;
+
+function Vec3 (constref vec: TVec2; z: TScalar): TVec3; inline;
+begin
+	result.x := vec.x;
+	result.y := vec.y;
+	result.z := z;
+end;
+
+function V3 (x, y, z: TScalar): TVec3; inline;
+begin
+	result := Vec3(x, y, z);
+end;
+
+function V3 (constref vec: TVec2; z: TScalar): TVec3; inline;
+begin
+	result := Vec3(vec, z);
+end;
+
+function Vec4 (x, y, z, w: TScalar): TVec4; inline;
+begin
+	result.x := x;
+	result.y := y;
+	result.z := z;
+	result.w := w;
+end;
+
+function Vec4 (constref vec: TVec3; w: TScalar): TVec4; inline;
+begin
+	result.x := vec.x;
+	result.y := vec.y;
+	result.z := vec.z;
+	result.w := w;
+end;
+
+function Vec4 (constref vec: TVec2; z, w: TScalar): TVec4; inline;
+begin
+	result.x := vec.x;
+	result.y := vec.y;
+	result.z := z;
+	result.w := w;
+end;
+
+function V4 (constref vec: TVec3; w: TScalar): TVec4; inline;
+begin
+	result := Vec4(vec, w);
+end;
+
+function V4 (constref vec: TVec2; z, w: TScalar): TVec4; inline;
+begin
+	result := Vec4(vec, z, w);
+end;
+
+function V4 (x, y, z, w: TScalar): TVec4; inline;
+begin
+	result := Vec4(x, y, z, w);
+end;
+
+{=============================================}
+{@! ___VEC2___ } 
+{=============================================}
+function TVec2.GetComponent(const pIndex:integer):TScalar;
+begin
+ result:=v[pIndex];
+end;
+
+procedure TVec2.SetComponent(const pIndex:integer;const pValue:TScalar);
+begin
+ v[pIndex]:=pValue;
+end;
+
+function TVec2.Length: TScalar;
+begin
+	result := Sqrt(SquaredLength);
+end;
+
+function TVec2.SquaredLength: TScalar;
+begin
+	result := Power(x, 2) + Power(y, 2);
+end;
+
+function TVec2.Normalize: TVec2;
+var
+	fac: TScalar;
+begin
+	//result := self / Magnitude;
+	fac:=Sqrt(Sqr(x)+Sqr(y));
+	if fac<>0.0 then begin
+		fac:=1.0/fac;
+		result.x:=x*fac;
+		result.y:=y*fac;
+	end else begin
+		result.x:=0.0;
+		result.y:=0.0;
+	end;
+end;
+
+function TVec2.Negate: TVec2;
+begin
+	result := Vec2(-x, -y);
+end;
+
+function TVec2.Dot (constref vec: TVec2): TScalar;
+begin
+	result := (x * vec.x) + (y * vec.y);
+end;
+
+function TVec2.Cross(constref vec:TVec2):TVec2;
+begin
+ result.x:=(y*vec.x)-(x*vec.y);
+ result.y:=(x*vec.y)-(y*vec.x);
 end;
 
 procedure TVec2.Show;
@@ -176,73 +348,73 @@ begin
 	result := FloatToStr(x)+','+FloatToStr(y);
 end;
 
-class operator TVec2.+ (p1, p2: TVec2): TVec2;
+class operator TVec2.:= (a:TScalar): TVec2;
+begin
+	result.x := a;
+	result.y := a;
+end;
+
+class operator TVec2.+ (constref p1, p2: TVec2): TVec2;
 begin
 	result := Vec2(p1.x+p2.x, p1.y+p2.y);
 end;
 
-class operator TVec2.- (p1, p2: TVec2): TVec2;
+class operator TVec2.- (constref p1, p2: TVec2): TVec2;
 begin
 	result := Vec2(p1.x-p2.x, p1.y-p2.y);
 end;
 
-class operator TVec2.* (p1, p2: TVec2): TVec2; 
+class operator TVec2.* (constref p1, p2: TVec2): TVec2; 
 begin
 	result := Vec2(p1.x*p2.x, p1.y*p2.y);
 end;
 
-class operator TVec2./ (p1, p2: TVec2): TVec2; 
+class operator TVec2./ (constref p1, p2: TVec2): TVec2; 
 begin
 	result := Vec2(p1.x/p2.x, p1.y/p2.y);
 end;
 
-class operator TVec2.= (p1, p2: TVec2): boolean; 
+class operator TVec2.= (constref p1, p2: TVec2): boolean; 
 begin
 	result := (p1.x = p2.x) and (p1.y = p2.y);
 end;
 
-class operator TVec2.+ (p1: TVec2; p2: TScalar): TVec2;
+class operator TVec2.+ (constref p1: TVec2; p2: TScalar): TVec2;
 begin
 	result := Vec2(p1.x+p2, p1.y+p2);
 end;
 
-class operator TVec2.- (p1: TVec2; p2: TScalar): TVec2;
+class operator TVec2.- (constref p1: TVec2; p2: TScalar): TVec2;
 begin
 	result := Vec2(p1.x-p2, p1.y-p2);
 end;
 
-class operator TVec2.* (p1: TVec2; p2: TScalar): TVec2;
+class operator TVec2.* (constref p1: TVec2; p2: TScalar): TVec2;
 begin
 	result := Vec2(p1.x*p2, p1.y*p2);
 end;
 
-class operator TVec2./ (p1: TVec2; p2: TScalar): TVec2;
+class operator TVec2./ (constref p1: TVec2; p2: TScalar): TVec2;
 begin
 	result := Vec2(p1.x/p2, p1.y/p2);
+end;
+
+{=============================================}
+{@! ___VEC3___ } 
+{=============================================}
+function TVec3.GetComponent(const pIndex:integer):TScalar;
+begin
+ result:=v[pIndex];
+end;
+
+procedure TVec3.SetComponent(const pIndex:integer;const pValue:TScalar);
+begin
+ v[pIndex]:=pValue;
 end;
 
 class function TVec3.Up: TVec3;
 begin
 	result := Vec3(0,1,0);
-end;
-
-class function TVec3.Make (_x,_y,_z: TScalar): TVec3;
-begin
-	result.x := _x;
-	result.y := _y;
-	result.z := _z;
-end;
-
-function Vec3 (x, y, z: TScalar): TVec3; inline;
-begin
-	result.x := x;
-	result.y := y;
-	result.z := z;
-end;
-
-function V3 (x, y, z: TScalar): TVec3; inline;
-begin
-	result := Vec3(x, y, z);
 end;
 
 procedure TVec3.Show;
@@ -260,97 +432,217 @@ begin
 	result := FloatToStr(x)+','+FloatToStr(y)+','+FloatToStr(z);
 end;
 
-function TVec3.Normalize:TVec3;
+function TVec3.Length: TScalar;
+begin
+	result := Sqrt(SquaredLength);
+end;
+
+function TVec3.SquaredLength: TScalar;
+begin
+	result := Power(x, 2) + Power(y, 2) + Power(z, 2);
+end;
+
+function TVec3.Normalize: TVec3;
 var
-	Factor:TScalar;
+	fac: TScalar;
 begin
- Factor:=sqrt(sqr(x)+sqr(y)+sqr(z));
- if Factor<>0.0 then begin
-  Factor:=1.0/Factor;
-  result.x:=x*Factor;
-  result.y:=y*Factor;
-  result.z:=z*Factor;
- end else begin
-  result.x:=0.0;
-  result.y:=0.0;
-  result.z:=0.0;
- end;
+	//result := self / Magnitude;
+	fac:=Sqrt(Sqr(x)+Sqr(y)+Sqr(z));
+	if fac<>0.0 then begin
+		fac:=1.0/fac;
+		result.x:=x*fac;
+		result.y:=y*fac;
+		result.z:=z*fac;
+	end else begin
+		result.x:=0.0;
+		result.y:=0.0;
+		result.z:=0.0;
+	end;
 end;
 
-function TVec3.Cross(const b:TVec3):TVec3;
+function TVec3.Negate: TVec3;
 begin
- result.x:=(y*b.z)-(z*b.y);
- result.y:=(z*b.x)-(x*b.z);
- result.z:=(x*b.y)-(y*b.x);
+	result := Vec3(-x, -y, -z);
 end;
 
-class operator TVec3.+ (p1, p2: TVec3): TVec3;
+function TVec3.Dot (constref vec: TVec3): TScalar;
+begin
+	result := (x * vec.x) + (y * vec.y) + (z * vec.z);
+end;
+
+function TVec3.Cross(constref vec: TVec3): TVec3;
+begin
+ result.x:=(y*vec.z)-(z*vec.y);
+ result.y:=(z*vec.x)-(x*vec.z);
+ result.z:=(x*vec.y)-(y*vec.x);
+end;
+
+class operator TVec3.:= (a:TScalar): TVec3;
+begin
+	result.x := a;
+	result.y := a;
+	result.z := a;
+end;
+
+class operator TVec3.+ (constref p1, p2: TVec3): TVec3;
 begin
 	result := Vec3(p1.x+p2.x, p1.y+p2.y, p1.z+p2.z);
 end;
 
-class operator TVec3.- (p1, p2: TVec3): TVec3;
+class operator TVec3.- (constref p1, p2: TVec3): TVec3;
 begin
 	result := Vec3(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z);
 end;
 
-class operator TVec3.* (p1, p2: TVec3): TVec3; 
+class operator TVec3.* (constref p1, p2: TVec3): TVec3; 
 begin
 	result := Vec3(p1.x*p2.x, p1.y*p2.y, p1.z*p2.z);
 end;
 
-class operator TVec3./ (p1, p2: TVec3): TVec3; 
+class operator TVec3./ (constref p1, p2: TVec3): TVec3; 
 begin
 	result := Vec3(p1.x/p2.x, p1.y/p2.y, p1.z/p2.z);
 end;
 
-class operator TVec3.= (p1, p2: TVec3): boolean; 
+class operator TVec3.= (constref p1, p2: TVec3): boolean; 
 begin
 	result := (p1.x = p2.x) and (p1.y = p2.y) and (p1.z = p2.z);
 end;
 
-class operator TVec3.+ (p1: TVec3; p2: TScalar): TVec3;
+class operator TVec3.+ (constref p1: TVec3; p2: TScalar): TVec3;
 begin
 	result := Vec3(p1.x+p2, p1.y+p2, p1.z+p2);
 end;
 
-class operator TVec3.- (p1: TVec3; p2: TScalar): TVec3;
+class operator TVec3.- (constref p1: TVec3; p2: TScalar): TVec3;
 begin
 	result := Vec3(p1.x-p2, p1.y-p2, p1.z-p2);
 end;
 
-class operator TVec3.* (p1: TVec3; p2: TScalar): TVec3;
+class operator TVec3.* (constref p1: TVec3; p2: TScalar): TVec3;
 begin
 	result := Vec3(p1.x*p2, p1.y*p2, p1.z*p2);
 end;
 
-class operator TVec3./ (p1: TVec3; p2: TScalar): TVec3;
+class operator TVec3./ (constref p1: TVec3; p2: TScalar): TVec3;
 begin
 	result := Vec3(p1.x/p2, p1.y/p2, p1.z/p2);
 end;
 
+{=============================================}
+{@! ___VEC4___ } 
+{=============================================}
+
+function TVec4.Length: TScalar;
+begin
+	result := Sqrt(SquaredLength);
+end;
+
+function TVec4.SquaredLength: TScalar;
+begin
+	result := Power(x, 2) + Power(y, 2) + Power(z, 2) + Power(w, 2);
+end;
+
+function TVec4.Normalize: TVec4;
+var
+	fac: TScalar;
+begin
+	//result := self / Magnitude;
+	fac:=Sqrt(Sqr(x)+Sqr(y)+Sqr(z)+Sqr(w));
+	if fac<>0.0 then begin
+		fac:=1.0/fac;
+		result.x:=x*fac;
+		result.y:=y*fac;
+		result.z:=z*fac;
+		result.w:=w*fac;
+	end else begin
+		result.x:=0.0;
+		result.y:=0.0;
+		result.z:=0.0;
+		result.w:=0.0;
+	end;
+end;
+
+function TVec4.Negate: TVec4;
+begin
+	result := Vec4(-x, -y, -z, -w);
+end;
+
+function TVec4.Dot (constref vec: TVec4): TScalar;
+begin
+	result := (x * vec.x) + (y * vec.y) + (z * vec.z) + (w * vec.w);
+end;
+
+function TVec4.Cross(constref vec: TVec4): TVec4;
+begin
+ result.x:=(y*vec.z)-(z*vec.y);
+ result.y:=(z*vec.x)-(x*vec.z);
+ result.z:=(x*vec.y)-(y*vec.x);
+ result.w:=1.0;
+end;
+
 function TVec4.GetComponent(const pIndex:integer):TScalar;
 begin
- result:=RawComponents[pIndex];
+ result:=v[pIndex];
 end;
 
 procedure TVec4.SetComponent(const pIndex:integer;const pValue:TScalar);
 begin
- RawComponents[pIndex]:=pValue;
+ v[pIndex]:=pValue;
 end;
 
-function Vec4 (x, y, z, w: TScalar): TVec4; inline;
+class operator TVec4.:= (a:TScalar): TVec4;
 begin
-	result.x := x;
-	result.y := y;
-	result.z := z;
-	result.w := w;
+	result.x := a;
+	result.y := a;
+	result.z := a;
+	result.w := a;
 end;
 
-function V4 (x, y, z, w: TScalar): TVec4; inline;
+class operator TVec4.+ (constref p1, p2: TVec4): TVec4;
 begin
-	result := Vec4(x, y, z, w);
+	result := Vec4(p1.x+p2.x, p1.y+p2.y, p1.z+p2.z, p1.w+p2.w);
 end;
+
+class operator TVec4.- (constref p1, p2: TVec4): TVec4;
+begin
+	result := Vec4(p1.x-p2.x, p1.y-p2.y, p1.z-p2.z, p1.w-p2.w);
+end;
+
+class operator TVec4.* (constref p1, p2: TVec4): TVec4; 
+begin
+	result := Vec4(p1.x*p2.x, p1.y*p2.y, p1.z*p2.z, p1.w*p2.w);
+end;
+
+class operator TVec4./ (constref p1, p2: TVec4): TVec4; 
+begin
+	result := Vec4(p1.x/p2.x, p1.y/p2.y, p1.z/p2.z, p1.w/p2.w);
+end;
+
+class operator TVec4.= (constref p1, p2: TVec4): boolean; 
+begin
+	result := (p1.x = p2.x) and (p1.y = p2.y) and (p1.z = p2.z) and (p1.w = p2.w);
+end;
+
+class operator TVec4.+ (constref p1: TVec4; p2: TScalar): TVec4;
+begin
+	result := Vec4(p1.x+p2, p1.y+p2, p1.z+p2, p1.w+p2);
+end;
+
+class operator TVec4.- (constref p1: TVec4; p2: TScalar): TVec4;
+begin
+	result := Vec4(p1.x-p2, p1.y-p2, p1.z-p2, p1.w-p2);
+end;
+
+class operator TVec4.* (constref p1: TVec4; p2: TScalar): TVec4;
+begin
+	result := Vec4(p1.x*p2, p1.y*p2, p1.z*p2, p1.w*p2);
+end;
+
+class operator TVec4./ (constref p1: TVec4; p2: TScalar): TVec4;
+begin
+	result := Vec4(p1.x/p2, p1.y/p2, p1.z/p2, p1.w/p2);
+end; 
 
 procedure TVec4.Show;
 begin
@@ -372,6 +664,24 @@ begin
 	result := FloatToStr(x)+','+FloatToStr(y)+','+FloatToStr(z)+','+FloatToStr(w);
 end;
 
+{=============================================}
+{@! ___MAT4___ } 
+{=============================================}
+function M4: TMat4;
+begin
+	result := TMat4.Identity;
+end;
+
+function TMat4.GetComponent(const column, row:integer):TScalar;
+begin
+ result:=m[row,column];
+end;
+
+procedure TMat4.SetComponent(const column, row:integer;const pValue:TScalar);
+begin
+ m[row,column]:=pValue;
+end;
+
 function SameValue (a, b: TScalar): boolean; inline;
 begin
 	result := a = b;
@@ -389,62 +699,62 @@ end;
 
 constructor TMat4.Translate(const tx,ty,tz:TScalar);
 begin
- RawComponents[0,0]:=1.0;
- RawComponents[0,1]:=0.0;
- RawComponents[0,2]:=0.0;
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=0.0;
- RawComponents[1,1]:=1.0;
- RawComponents[1,2]:=0.0;
- RawComponents[1,3]:=0.0;
- RawComponents[2,0]:=0.0;
- RawComponents[2,1]:=0.0;
- RawComponents[2,2]:=1.0;
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=tx;
- RawComponents[3,1]:=ty;
- RawComponents[3,2]:=tz;
- RawComponents[3,3]:=1.0;
+ m[0,0]:=1.0;
+ m[0,1]:=0.0;
+ m[0,2]:=0.0;
+ m[0,3]:=0.0;
+ m[1,0]:=0.0;
+ m[1,1]:=1.0;
+ m[1,2]:=0.0;
+ m[1,3]:=0.0;
+ m[2,0]:=0.0;
+ m[2,1]:=0.0;
+ m[2,2]:=1.0;
+ m[2,3]:=0.0;
+ m[3,0]:=tx;
+ m[3,1]:=ty;
+ m[3,2]:=tz;
+ m[3,3]:=1.0;
 end;
 
 constructor TMat4.Translate(const pTranslate:TVec3);
 begin
- RawComponents[0,0]:=1.0;
- RawComponents[0,1]:=0.0;
- RawComponents[0,2]:=0.0;
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=0.0;
- RawComponents[1,1]:=1.0;
- RawComponents[1,2]:=0.0;
- RawComponents[1,3]:=0.0;
- RawComponents[2,0]:=0.0;
- RawComponents[2,1]:=0.0;
- RawComponents[2,2]:=1.0;
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=pTranslate.x;
- RawComponents[3,1]:=pTranslate.y;
- RawComponents[3,2]:=pTranslate.z;
- RawComponents[3,3]:=1.0;
+ m[0,0]:=1.0;
+ m[0,1]:=0.0;
+ m[0,2]:=0.0;
+ m[0,3]:=0.0;
+ m[1,0]:=0.0;
+ m[1,1]:=1.0;
+ m[1,2]:=0.0;
+ m[1,3]:=0.0;
+ m[2,0]:=0.0;
+ m[2,1]:=0.0;
+ m[2,2]:=1.0;
+ m[2,3]:=0.0;
+ m[3,0]:=pTranslate.x;
+ m[3,1]:=pTranslate.y;
+ m[3,2]:=pTranslate.z;
+ m[3,3]:=1.0;
 end;
 
 constructor TMat4.Translate(const tx,ty,tz,tw:TScalar);
 begin
- RawComponents[0,0]:=1.0;
- RawComponents[0,1]:=0.0;
- RawComponents[0,2]:=0.0;
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=0.0;
- RawComponents[1,1]:=1.0;
- RawComponents[1,2]:=0.0;
- RawComponents[1,3]:=0.0;
- RawComponents[2,0]:=0.0;
- RawComponents[2,1]:=0.0;
- RawComponents[2,2]:=1.0;
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=tx;
- RawComponents[3,1]:=ty;
- RawComponents[3,2]:=tz;
- RawComponents[3,3]:=tw;
+ m[0,0]:=1.0;
+ m[0,1]:=0.0;
+ m[0,2]:=0.0;
+ m[0,3]:=0.0;
+ m[1,0]:=0.0;
+ m[1,1]:=1.0;
+ m[1,2]:=0.0;
+ m[1,3]:=0.0;
+ m[2,0]:=0.0;
+ m[2,1]:=0.0;
+ m[2,2]:=1.0;
+ m[2,3]:=0.0;
+ m[3,0]:=tx;
+ m[3,1]:=ty;
+ m[3,2]:=tz;
+ m[3,3]:=tw;
 end;
 
 constructor TMat4.Scale (x, y, z: TScalar);
@@ -472,101 +782,101 @@ end;
 
 constructor TMat4.RotateX(const Angle:TScalar);
 begin
- RawComponents[0,0]:=1.0;
- RawComponents[0,1]:=0.0;
- RawComponents[0,2]:=0.0;
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=0.0;
- SinCos(Angle,RawComponents[1,2],RawComponents[1,1]);
- RawComponents[1,3]:=0.0;
- RawComponents[2,0]:=0.0;
- RawComponents[2,1]:=-RawComponents[1,2];
- RawComponents[2,2]:=RawComponents[1,1];
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=0.0;
- RawComponents[3,1]:=0.0;
- RawComponents[3,2]:=0.0;
- RawComponents[3,3]:=1.0;
+ m[0,0]:=1.0;
+ m[0,1]:=0.0;
+ m[0,2]:=0.0;
+ m[0,3]:=0.0;
+ m[1,0]:=0.0;
+ SinCos(Angle,m[1,2],m[1,1]);
+ m[1,3]:=0.0;
+ m[2,0]:=0.0;
+ m[2,1]:=-m[1,2];
+ m[2,2]:=m[1,1];
+ m[2,3]:=0.0;
+ m[3,0]:=0.0;
+ m[3,1]:=0.0;
+ m[3,2]:=0.0;
+ m[3,3]:=1.0;
 end;
 
 constructor TMat4.RotateY(const Angle:TScalar);
 begin
- SinCos(Angle,RawComponents[2,0],RawComponents[0,0]);
- RawComponents[0,1]:=0.0;
- RawComponents[0,2]:=-RawComponents[2,0];
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=0.0;
- RawComponents[1,1]:=1.0;
- RawComponents[1,2]:=0.0;
- RawComponents[1,3]:=0.0;
- RawComponents[2,1]:=0.0;
- RawComponents[2,2]:=RawComponents[0,0];
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=0.0;
- RawComponents[3,1]:=0.0;
- RawComponents[3,2]:=0.0;
- RawComponents[3,3]:=1.0;
+ SinCos(Angle,m[2,0],m[0,0]);
+ m[0,1]:=0.0;
+ m[0,2]:=-m[2,0];
+ m[0,3]:=0.0;
+ m[1,0]:=0.0;
+ m[1,1]:=1.0;
+ m[1,2]:=0.0;
+ m[1,3]:=0.0;
+ m[2,1]:=0.0;
+ m[2,2]:=m[0,0];
+ m[2,3]:=0.0;
+ m[3,0]:=0.0;
+ m[3,1]:=0.0;
+ m[3,2]:=0.0;
+ m[3,3]:=1.0;
 end;
 
 constructor TMat4.RotateZ(const Angle:TScalar);
 begin
- SinCos(Angle,RawComponents[0,1],RawComponents[0,0]);
- RawComponents[0,2]:=0.0;
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=-RawComponents[0,1];
- RawComponents[1,1]:=RawComponents[0,0];
- RawComponents[1,2]:=0.0;
- RawComponents[1,3]:=0.0;
- RawComponents[2,0]:=0.0;
- RawComponents[2,1]:=0.0;
- RawComponents[2,2]:=1.0;
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=0.0;
- RawComponents[3,1]:=0.0;
- RawComponents[3,2]:=0.0;
- RawComponents[3,3]:=1.0;
+ SinCos(Angle,m[0,1],m[0,0]);
+ m[0,2]:=0.0;
+ m[0,3]:=0.0;
+ m[1,0]:=-m[0,1];
+ m[1,1]:=m[0,0];
+ m[1,2]:=0.0;
+ m[1,3]:=0.0;
+ m[2,0]:=0.0;
+ m[2,1]:=0.0;
+ m[2,2]:=1.0;
+ m[2,3]:=0.0;
+ m[3,0]:=0.0;
+ m[3,1]:=0.0;
+ m[3,2]:=0.0;
+ m[3,3]:=1.0;
 end;
 
 constructor TMat4.Rotate(const Angle:TScalar;const Axis:TVec3);
 var SinusAngle,CosinusAngle:TScalar;
 begin
  SinCos(Angle,SinusAngle,CosinusAngle);
- RawComponents[0,0]:=CosinusAngle+((1.0-CosinusAngle)*sqr(Axis.x));
- RawComponents[1,0]:=((1.0-CosinusAngle)*Axis.x*Axis.y)-(Axis.z*SinusAngle);
- RawComponents[2,0]:=((1.0-CosinusAngle)*Axis.x*Axis.z)+(Axis.y*SinusAngle);
- RawComponents[0,3]:=0.0;
- RawComponents[0,1]:=((1.0-CosinusAngle)*Axis.x*Axis.z)+(Axis.z*SinusAngle);
- RawComponents[1,1]:=CosinusAngle+((1.0-CosinusAngle)*sqr(Axis.y));
- RawComponents[2,1]:=((1.0-CosinusAngle)*Axis.y*Axis.z)-(Axis.x*SinusAngle);
- RawComponents[1,3]:=0.0;
- RawComponents[0,2]:=((1.0-CosinusAngle)*Axis.x*Axis.z)-(Axis.y*SinusAngle);
- RawComponents[1,2]:=((1.0-CosinusAngle)*Axis.y*Axis.z)+(Axis.x*SinusAngle);
- RawComponents[2,2]:=CosinusAngle+((1.0-CosinusAngle)*sqr(Axis.z));
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=0.0;
- RawComponents[3,1]:=0.0;
- RawComponents[3,2]:=0.0;
- RawComponents[3,3]:=1.0;
+ m[0,0]:=CosinusAngle+((1.0-CosinusAngle)*sqr(Axis.x));
+ m[1,0]:=((1.0-CosinusAngle)*Axis.x*Axis.y)-(Axis.z*SinusAngle);
+ m[2,0]:=((1.0-CosinusAngle)*Axis.x*Axis.z)+(Axis.y*SinusAngle);
+ m[0,3]:=0.0;
+ m[0,1]:=((1.0-CosinusAngle)*Axis.x*Axis.z)+(Axis.z*SinusAngle);
+ m[1,1]:=CosinusAngle+((1.0-CosinusAngle)*sqr(Axis.y));
+ m[2,1]:=((1.0-CosinusAngle)*Axis.y*Axis.z)-(Axis.x*SinusAngle);
+ m[1,3]:=0.0;
+ m[0,2]:=((1.0-CosinusAngle)*Axis.x*Axis.z)-(Axis.y*SinusAngle);
+ m[1,2]:=((1.0-CosinusAngle)*Axis.y*Axis.z)+(Axis.x*SinusAngle);
+ m[2,2]:=CosinusAngle+((1.0-CosinusAngle)*sqr(Axis.z));
+ m[2,3]:=0.0;
+ m[3,0]:=0.0;
+ m[3,1]:=0.0;
+ m[3,2]:=0.0;
+ m[3,3]:=1.0;
 end;
 
-constructor TMat4.Rotate(const pMatrix:TMat4);
+constructor TMat4.Rotate(constref pMatrix:TMat4);
 begin
- RawComponents[0,0]:=pMatrix.RawComponents[0,0];
- RawComponents[0,1]:=pMatrix.RawComponents[0,1];
- RawComponents[0,2]:=pMatrix.RawComponents[0,2];
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=pMatrix.RawComponents[1,0];
- RawComponents[1,1]:=pMatrix.RawComponents[1,1];
- RawComponents[1,2]:=pMatrix.RawComponents[1,2];
- RawComponents[1,3]:=0.0;
- RawComponents[2,0]:=pMatrix.RawComponents[2,0];
- RawComponents[2,1]:=pMatrix.RawComponents[2,1];
- RawComponents[2,2]:=pMatrix.RawComponents[2,2];
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=0.0;
- RawComponents[3,1]:=0.0;
- RawComponents[3,2]:=0.0;
- RawComponents[3,3]:=1.0;
+ m[0,0]:=pMatrix.m[0,0];
+ m[0,1]:=pMatrix.m[0,1];
+ m[0,2]:=pMatrix.m[0,2];
+ m[0,3]:=0.0;
+ m[1,0]:=pMatrix.m[1,0];
+ m[1,1]:=pMatrix.m[1,1];
+ m[1,2]:=pMatrix.m[1,2];
+ m[1,3]:=0.0;
+ m[2,0]:=pMatrix.m[2,0];
+ m[2,1]:=pMatrix.m[2,1];
+ m[2,2]:=pMatrix.m[2,2];
+ m[2,3]:=0.0;
+ m[3,0]:=0.0;
+ m[3,1]:=0.0;
+ m[3,2]:=0.0;
+ m[3,3]:=1.0;
 end;
 
 constructor TMat4.Ortho(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
@@ -575,22 +885,22 @@ begin
  rml:=Right-Left;
  tmb:=Top-Bottom;
  fmn:=zFar-zNear;
- RawComponents[0,0]:=2.0/rml;
- RawComponents[0,1]:=0.0;
- RawComponents[0,2]:=0.0;
- RawComponents[0,3]:=0.0;
- RawComponents[1,0]:=0.0;
- RawComponents[1,1]:=2.0/tmb;
- RawComponents[1,2]:=0.0;
- RawComponents[1,3]:=0.0;
- RawComponents[2,0]:=0.0;
- RawComponents[2,1]:=0.0;
- RawComponents[2,2]:=(-2.0)/fmn;
- RawComponents[2,3]:=0.0;
- RawComponents[3,0]:=(-(Right+Left))/rml;
- RawComponents[3,1]:=(-(Top+Bottom))/tmb;
- RawComponents[3,2]:=(-(zFar+zNear))/fmn;
- RawComponents[3,3]:=1.0;
+ m[0,0]:=2.0/rml;
+ m[0,1]:=0.0;
+ m[0,2]:=0.0;
+ m[0,3]:=0.0;
+ m[1,0]:=0.0;
+ m[1,1]:=2.0/tmb;
+ m[1,2]:=0.0;
+ m[1,3]:=0.0;
+ m[2,0]:=0.0;
+ m[2,1]:=0.0;
+ m[2,2]:=(-2.0)/fmn;
+ m[2,3]:=0.0;
+ m[3,0]:=(-(Right+Left))/rml;
+ m[3,1]:=(-(Top+Bottom))/tmb;
+ m[3,2]:=(-(zFar+zNear))/fmn;
+ m[3,3]:=1.0;
 end;
 
 constructor TMat4.Perspective(const fovy,Aspect,zNear,zFar:TScalar);
@@ -601,88 +911,88 @@ begin
  Sine:=sin(Radians);
  if not ((ZDelta=0) or (Sine=0) or (aspect=0)) then begin
   Cotangent:=cos(Radians)/Sine;
-  RawComponents:=Matrix4x4Identity.RawComponents;
-  RawComponents[0,0]:=Cotangent/aspect;
-  RawComponents[1,1]:=Cotangent;
-  RawComponents[2,2]:=(-(zFar+zNear))/ZDelta;
-  RawComponents[2,3]:=-1-0;
-  RawComponents[3,2]:=(-(2.0*zNear*zFar))/ZDelta;
-  RawComponents[3,3]:=0.0;
+  m:=Matrix4x4Identity.m;
+  m[0,0]:=Cotangent/aspect;
+  m[1,1]:=Cotangent;
+  m[2,2]:=(-(zFar+zNear))/ZDelta;
+  m[2,3]:=-1-0;
+  m[3,2]:=(-(2.0*zNear*zFar))/ZDelta;
+  m[3,3]:=0.0;
  end;
 end;
 
-constructor TMat4.LookAt(const Eye,Center,Up:TVec3);
+constructor TMat4.LookAt(constref Eye,Center,Up:TVec3);
 var RightVector,UpVector,ForwardVector:TVec3;
 begin
  ForwardVector:=(Eye-Center).Normalize;
  RightVector:=(Up.Cross(ForwardVector)).Normalize;
  UpVector:=(ForwardVector.Cross(RightVector)).Normalize;
- RawComponents[0,0]:=RightVector.x;
- RawComponents[1,0]:=RightVector.y;
- RawComponents[2,0]:=RightVector.z;
- RawComponents[3,0]:=-((RightVector.x*Eye.x)+(RightVector.y*Eye.y)+(RightVector.z*Eye.z));
- RawComponents[0,1]:=UpVector.x;
- RawComponents[1,1]:=UpVector.y;
- RawComponents[2,1]:=UpVector.z;
- RawComponents[3,1]:=-((UpVector.x*Eye.x)+(UpVector.y*Eye.y)+(UpVector.z*Eye.z));
- RawComponents[0,2]:=ForwardVector.x;
- RawComponents[1,2]:=ForwardVector.y;
- RawComponents[2,2]:=ForwardVector.z;
- RawComponents[3,2]:=-((ForwardVector.x*Eye.x)+(ForwardVector.y*Eye.y)+(ForwardVector.z*Eye.z));
- RawComponents[0,3]:=0.0;
- RawComponents[1,3]:=0.0;
- RawComponents[2,3]:=0.0;
- RawComponents[3,3]:=1.0;
+ m[0,0]:=RightVector.x;
+ m[1,0]:=RightVector.y;
+ m[2,0]:=RightVector.z;
+ m[3,0]:=-((RightVector.x*Eye.x)+(RightVector.y*Eye.y)+(RightVector.z*Eye.z));
+ m[0,1]:=UpVector.x;
+ m[1,1]:=UpVector.y;
+ m[2,1]:=UpVector.z;
+ m[3,1]:=-((UpVector.x*Eye.x)+(UpVector.y*Eye.y)+(UpVector.z*Eye.z));
+ m[0,2]:=ForwardVector.x;
+ m[1,2]:=ForwardVector.y;
+ m[2,2]:=ForwardVector.z;
+ m[3,2]:=-((ForwardVector.x*Eye.x)+(ForwardVector.y*Eye.y)+(ForwardVector.z*Eye.z));
+ m[0,3]:=0.0;
+ m[1,3]:=0.0;
+ m[2,3]:=0.0;
+ m[3,3]:=1.0;
 end;
 
 function TMat4.Inverse:TMat4;
 var
 	t0,t4,t8,t12,d:TScalar;
 begin
- t0:=(((RawComponents[1,1]*RawComponents[2,2]*RawComponents[3,3])-(RawComponents[1,1]*RawComponents[2,3]*RawComponents[3,2]))-(RawComponents[2,1]*RawComponents[1,2]*RawComponents[3,3])+(RawComponents[2,1]*RawComponents[1,3]*RawComponents[3,2])+(RawComponents[3,1]*RawComponents[1,2]*RawComponents[2,3]))-(RawComponents[3,1]*RawComponents[1,3]*RawComponents[2,2]);
- t4:=((((-(RawComponents[1,0]*RawComponents[2,2]*RawComponents[3,3]))+(RawComponents[1,0]*RawComponents[2,3]*RawComponents[3,2])+(RawComponents[2,0]*RawComponents[1,2]*RawComponents[3,3]))-(RawComponents[2,0]*RawComponents[1,3]*RawComponents[3,2]))-(RawComponents[3,0]*RawComponents[1,2]*RawComponents[2,3]))+(RawComponents[3,0]*RawComponents[1,3]*RawComponents[2,2]);
- t8:=((((RawComponents[1,0]*RawComponents[2,1]*RawComponents[3,3])-(RawComponents[1,0]*RawComponents[2,3]*RawComponents[3,1]))-(RawComponents[2,0]*RawComponents[1,1]*RawComponents[3,3]))+(RawComponents[2,0]*RawComponents[1,3]*RawComponents[3,1])+(RawComponents[3,0]*RawComponents[1,1]*RawComponents[2,3]))-(RawComponents[3,0]*RawComponents[1,3]*RawComponents[2,1]);
- t12:=((((-(RawComponents[1,0]*RawComponents[2,1]*RawComponents[3,2]))+(RawComponents[1,0]*RawComponents[2,2]*RawComponents[3,1])+(RawComponents[2,0]*RawComponents[1,1]*RawComponents[3,2]))-(RawComponents[2,0]*RawComponents[1,2]*RawComponents[3,1]))-(RawComponents[3,0]*RawComponents[1,1]*RawComponents[2,2]))+(RawComponents[3,0]*RawComponents[1,2]*RawComponents[2,1]);
- d:=(RawComponents[0,0]*t0)+(RawComponents[0,1]*t4)+(RawComponents[0,2]*t8)+(RawComponents[0,3]*t12);
+ t0:=(((m[1,1]*m[2,2]*m[3,3])-(m[1,1]*m[2,3]*m[3,2]))-(m[2,1]*m[1,2]*m[3,3])+(m[2,1]*m[1,3]*m[3,2])+(m[3,1]*m[1,2]*m[2,3]))-(m[3,1]*m[1,3]*m[2,2]);
+ t4:=((((-(m[1,0]*m[2,2]*m[3,3]))+(m[1,0]*m[2,3]*m[3,2])+(m[2,0]*m[1,2]*m[3,3]))-(m[2,0]*m[1,3]*m[3,2]))-(m[3,0]*m[1,2]*m[2,3]))+(m[3,0]*m[1,3]*m[2,2]);
+ t8:=((((m[1,0]*m[2,1]*m[3,3])-(m[1,0]*m[2,3]*m[3,1]))-(m[2,0]*m[1,1]*m[3,3]))+(m[2,0]*m[1,3]*m[3,1])+(m[3,0]*m[1,1]*m[2,3]))-(m[3,0]*m[1,3]*m[2,1]);
+ t12:=((((-(m[1,0]*m[2,1]*m[3,2]))+(m[1,0]*m[2,2]*m[3,1])+(m[2,0]*m[1,1]*m[3,2]))-(m[2,0]*m[1,2]*m[3,1]))-(m[3,0]*m[1,1]*m[2,2]))+(m[3,0]*m[1,2]*m[2,1]);
+ d:=(m[0,0]*t0)+(m[0,1]*t4)+(m[0,2]*t8)+(m[0,3]*t12);
  if d<>0.0 then begin
   d:=1.0/d;
-  result.RawComponents[0,0]:=t0*d;
-  result.RawComponents[0,1]:=(((((-(RawComponents[0,1]*RawComponents[2,2]*RawComponents[3,3]))+(RawComponents[0,1]*RawComponents[2,3]*RawComponents[3,2])+(RawComponents[2,1]*RawComponents[0,2]*RawComponents[3,3]))-(RawComponents[2,1]*RawComponents[0,3]*RawComponents[3,2]))-(RawComponents[3,1]*RawComponents[0,2]*RawComponents[2,3]))+(RawComponents[3,1]*RawComponents[0,3]*RawComponents[2,2]))*d;
-  result.RawComponents[0,2]:=(((((RawComponents[0,1]*RawComponents[1,2]*RawComponents[3,3])-(RawComponents[0,1]*RawComponents[1,3]*RawComponents[3,2]))-(RawComponents[1,1]*RawComponents[0,2]*RawComponents[3,3]))+(RawComponents[1,1]*RawComponents[0,3]*RawComponents[3,2])+(RawComponents[3,1]*RawComponents[0,2]*RawComponents[1,3]))-(RawComponents[3,1]*RawComponents[0,3]*RawComponents[1,2]))*d;
-  result.RawComponents[0,3]:=(((((-(RawComponents[0,1]*RawComponents[1,2]*RawComponents[2,3]))+(RawComponents[0,1]*RawComponents[1,3]*RawComponents[2,2])+(RawComponents[1,1]*RawComponents[0,2]*RawComponents[2,3]))-(RawComponents[1,1]*RawComponents[0,3]*RawComponents[2,2]))-(RawComponents[2,1]*RawComponents[0,2]*RawComponents[1,3]))+(RawComponents[2,1]*RawComponents[0,3]*RawComponents[1,2]))*d;
-  result.RawComponents[1,0]:=t4*d;
-  result.RawComponents[1,1]:=((((RawComponents[0,0]*RawComponents[2,2]*RawComponents[3,3])-(RawComponents[0,0]*RawComponents[2,3]*RawComponents[3,2]))-(RawComponents[2,0]*RawComponents[0,2]*RawComponents[3,3])+(RawComponents[2,0]*RawComponents[0,3]*RawComponents[3,2])+(RawComponents[3,0]*RawComponents[0,2]*RawComponents[2,3]))-(RawComponents[3,0]*RawComponents[0,3]*RawComponents[2,2]))*d;
-  result.RawComponents[1,2]:=(((((-(RawComponents[0,0]*RawComponents[1,2]*RawComponents[3,3]))+(RawComponents[0,0]*RawComponents[1,3]*RawComponents[3,2])+(RawComponents[1,0]*RawComponents[0,2]*RawComponents[3,3]))-(RawComponents[1,0]*RawComponents[0,3]*RawComponents[3,2]))-(RawComponents[3,0]*RawComponents[0,2]*RawComponents[1,3]))+(RawComponents[3,0]*RawComponents[0,3]*RawComponents[1,2]))*d;
-  result.RawComponents[1,3]:=(((((RawComponents[0,0]*RawComponents[1,2]*RawComponents[2,3])-(RawComponents[0,0]*RawComponents[1,3]*RawComponents[2,2]))-(RawComponents[1,0]*RawComponents[0,2]*RawComponents[2,3]))+(RawComponents[1,0]*RawComponents[0,3]*RawComponents[2,2])+(RawComponents[2,0]*RawComponents[0,2]*RawComponents[1,3]))-(RawComponents[2,0]*RawComponents[0,3]*RawComponents[1,2]))*d;
-  result.RawComponents[2,0]:=t8*d;
-  result.RawComponents[2,1]:=(((((-(RawComponents[0,0]*RawComponents[2,1]*RawComponents[3,3]))+(RawComponents[0,0]*RawComponents[2,3]*RawComponents[3,1])+(RawComponents[2,0]*RawComponents[0,1]*RawComponents[3,3]))-(RawComponents[2,0]*RawComponents[0,3]*RawComponents[3,1]))-(RawComponents[3,0]*RawComponents[0,1]*RawComponents[2,3]))+(RawComponents[3,0]*RawComponents[0,3]*RawComponents[2,1]))*d;
-  result.RawComponents[2,2]:=(((((RawComponents[0,0]*RawComponents[1,1]*RawComponents[3,3])-(RawComponents[0,0]*RawComponents[1,3]*RawComponents[3,1]))-(RawComponents[1,0]*RawComponents[0,1]*RawComponents[3,3]))+(RawComponents[1,0]*RawComponents[0,3]*RawComponents[3,1])+(RawComponents[3,0]*RawComponents[0,1]*RawComponents[1,3]))-(RawComponents[3,0]*RawComponents[0,3]*RawComponents[1,1]))*d;
-  result.RawComponents[2,3]:=(((((-(RawComponents[0,0]*RawComponents[1,1]*RawComponents[2,3]))+(RawComponents[0,0]*RawComponents[1,3]*RawComponents[2,1])+(RawComponents[1,0]*RawComponents[0,1]*RawComponents[2,3]))-(RawComponents[1,0]*RawComponents[0,3]*RawComponents[2,1]))-(RawComponents[2,0]*RawComponents[0,1]*RawComponents[1,3]))+(RawComponents[2,0]*RawComponents[0,3]*RawComponents[1,1]))*d;
-  result.RawComponents[3,0]:=t12*d;
-  result.RawComponents[3,1]:=(((((RawComponents[0,0]*RawComponents[2,1]*RawComponents[3,2])-(RawComponents[0,0]*RawComponents[2,2]*RawComponents[3,1]))-(RawComponents[2,0]*RawComponents[0,1]*RawComponents[3,2]))+(RawComponents[2,0]*RawComponents[0,2]*RawComponents[3,1])+(RawComponents[3,0]*RawComponents[0,1]*RawComponents[2,2]))-(RawComponents[3,0]*RawComponents[0,2]*RawComponents[2,1]))*d;
-  result.RawComponents[3,2]:=(((((-(RawComponents[0,0]*RawComponents[1,1]*RawComponents[3,2]))+(RawComponents[0,0]*RawComponents[1,2]*RawComponents[3,1])+(RawComponents[1,0]*RawComponents[0,1]*RawComponents[3,2]))-(RawComponents[1,0]*RawComponents[0,2]*RawComponents[3,1]))-(RawComponents[3,0]*RawComponents[0,1]*RawComponents[1,2]))+(RawComponents[3,0]*RawComponents[0,2]*RawComponents[1,1]))*d;
-  result.RawComponents[3,3]:=(((((RawComponents[0,0]*RawComponents[1,1]*RawComponents[2,2])-(RawComponents[0,0]*RawComponents[1,2]*RawComponents[2,1]))-(RawComponents[1,0]*RawComponents[0,1]*RawComponents[2,2]))+(RawComponents[1,0]*RawComponents[0,2]*RawComponents[2,1])+(RawComponents[2,0]*RawComponents[0,1]*RawComponents[1,2]))-(RawComponents[2,0]*RawComponents[0,2]*RawComponents[1,1]))*d;
+  result.m[0,0]:=t0*d;
+  result.m[0,1]:=(((((-(m[0,1]*m[2,2]*m[3,3]))+(m[0,1]*m[2,3]*m[3,2])+(m[2,1]*m[0,2]*m[3,3]))-(m[2,1]*m[0,3]*m[3,2]))-(m[3,1]*m[0,2]*m[2,3]))+(m[3,1]*m[0,3]*m[2,2]))*d;
+  result.m[0,2]:=(((((m[0,1]*m[1,2]*m[3,3])-(m[0,1]*m[1,3]*m[3,2]))-(m[1,1]*m[0,2]*m[3,3]))+(m[1,1]*m[0,3]*m[3,2])+(m[3,1]*m[0,2]*m[1,3]))-(m[3,1]*m[0,3]*m[1,2]))*d;
+  result.m[0,3]:=(((((-(m[0,1]*m[1,2]*m[2,3]))+(m[0,1]*m[1,3]*m[2,2])+(m[1,1]*m[0,2]*m[2,3]))-(m[1,1]*m[0,3]*m[2,2]))-(m[2,1]*m[0,2]*m[1,3]))+(m[2,1]*m[0,3]*m[1,2]))*d;
+  result.m[1,0]:=t4*d;
+  result.m[1,1]:=((((m[0,0]*m[2,2]*m[3,3])-(m[0,0]*m[2,3]*m[3,2]))-(m[2,0]*m[0,2]*m[3,3])+(m[2,0]*m[0,3]*m[3,2])+(m[3,0]*m[0,2]*m[2,3]))-(m[3,0]*m[0,3]*m[2,2]))*d;
+  result.m[1,2]:=(((((-(m[0,0]*m[1,2]*m[3,3]))+(m[0,0]*m[1,3]*m[3,2])+(m[1,0]*m[0,2]*m[3,3]))-(m[1,0]*m[0,3]*m[3,2]))-(m[3,0]*m[0,2]*m[1,3]))+(m[3,0]*m[0,3]*m[1,2]))*d;
+  result.m[1,3]:=(((((m[0,0]*m[1,2]*m[2,3])-(m[0,0]*m[1,3]*m[2,2]))-(m[1,0]*m[0,2]*m[2,3]))+(m[1,0]*m[0,3]*m[2,2])+(m[2,0]*m[0,2]*m[1,3]))-(m[2,0]*m[0,3]*m[1,2]))*d;
+  result.m[2,0]:=t8*d;
+  result.m[2,1]:=(((((-(m[0,0]*m[2,1]*m[3,3]))+(m[0,0]*m[2,3]*m[3,1])+(m[2,0]*m[0,1]*m[3,3]))-(m[2,0]*m[0,3]*m[3,1]))-(m[3,0]*m[0,1]*m[2,3]))+(m[3,0]*m[0,3]*m[2,1]))*d;
+  result.m[2,2]:=(((((m[0,0]*m[1,1]*m[3,3])-(m[0,0]*m[1,3]*m[3,1]))-(m[1,0]*m[0,1]*m[3,3]))+(m[1,0]*m[0,3]*m[3,1])+(m[3,0]*m[0,1]*m[1,3]))-(m[3,0]*m[0,3]*m[1,1]))*d;
+  result.m[2,3]:=(((((-(m[0,0]*m[1,1]*m[2,3]))+(m[0,0]*m[1,3]*m[2,1])+(m[1,0]*m[0,1]*m[2,3]))-(m[1,0]*m[0,3]*m[2,1]))-(m[2,0]*m[0,1]*m[1,3]))+(m[2,0]*m[0,3]*m[1,1]))*d;
+  result.m[3,0]:=t12*d;
+  result.m[3,1]:=(((((m[0,0]*m[2,1]*m[3,2])-(m[0,0]*m[2,2]*m[3,1]))-(m[2,0]*m[0,1]*m[3,2]))+(m[2,0]*m[0,2]*m[3,1])+(m[3,0]*m[0,1]*m[2,2]))-(m[3,0]*m[0,2]*m[2,1]))*d;
+  result.m[3,2]:=(((((-(m[0,0]*m[1,1]*m[3,2]))+(m[0,0]*m[1,2]*m[3,1])+(m[1,0]*m[0,1]*m[3,2]))-(m[1,0]*m[0,2]*m[3,1]))-(m[3,0]*m[0,1]*m[1,2]))+(m[3,0]*m[0,2]*m[1,1]))*d;
+  result.m[3,3]:=(((((m[0,0]*m[1,1]*m[2,2])-(m[0,0]*m[1,2]*m[2,1]))-(m[1,0]*m[0,1]*m[2,2]))+(m[1,0]*m[0,2]*m[2,1])+(m[2,0]*m[0,1]*m[1,2]))-(m[2,0]*m[0,2]*m[1,1]))*d;
  end;
 end;
 
 function TMat4.Transpose:TMat4;
 begin
- result.RawComponents[0,0]:=RawComponents[0,0];
- result.RawComponents[0,1]:=RawComponents[1,0];
- result.RawComponents[0,2]:=RawComponents[2,0];
- result.RawComponents[0,3]:=RawComponents[3,0];
- result.RawComponents[1,0]:=RawComponents[0,1];
- result.RawComponents[1,1]:=RawComponents[1,1];
- result.RawComponents[1,2]:=RawComponents[2,1];
- result.RawComponents[1,3]:=RawComponents[3,1];
- result.RawComponents[2,0]:=RawComponents[0,2];
- result.RawComponents[2,1]:=RawComponents[1,2];
- result.RawComponents[2,2]:=RawComponents[2,2];
- result.RawComponents[2,3]:=RawComponents[3,2];
- result.RawComponents[3,0]:=RawComponents[0,3];
- result.RawComponents[3,1]:=RawComponents[1,3];
- result.RawComponents[3,2]:=RawComponents[2,3];
- result.RawComponents[3,3]:=RawComponents[3,3];
+ result.m[0,0]:=m[0,0];
+ result.m[0,1]:=m[1,0];
+ result.m[0,2]:=m[2,0];
+ result.m[0,3]:=m[3,0];
+ result.m[1,0]:=m[0,1];
+ result.m[1,1]:=m[1,1];
+ result.m[1,2]:=m[2,1];
+ result.m[1,3]:=m[3,1];
+ result.m[2,0]:=m[0,2];
+ result.m[2,1]:=m[1,2];
+ result.m[2,2]:=m[2,2];
+ result.m[2,3]:=m[3,2];
+ result.m[3,0]:=m[0,3];
+ result.m[3,1]:=m[1,3];
+ result.m[3,2]:=m[2,3];
+ result.m[3,3]:=m[3,3];
 end;
 
 procedure TMat4.Show; 
@@ -695,9 +1005,9 @@ begin
 			for x := 0 to 3 do
 				begin
 					if x < 3 then
-						write(FloatToStr(RawComponents[x, y]),',')
+						write(FloatToStr(m[x, y]),',')
 					else
-						write(FloatToStr(RawComponents[x, y]));
+						write(FloatToStr(m[x, y]));
 				end;
 			write(']');
 		end;
@@ -705,317 +1015,317 @@ end;
 
 class operator TMat4.:= (const a:TScalar):TMat4;
 begin
- result.RawComponents[0,0]:=a;
- result.RawComponents[0,1]:=a;
- result.RawComponents[0,2]:=a;
- result.RawComponents[0,3]:=a;
- result.RawComponents[1,0]:=a;
- result.RawComponents[1,1]:=a;
- result.RawComponents[1,2]:=a;
- result.RawComponents[1,3]:=a;
- result.RawComponents[2,0]:=a;
- result.RawComponents[2,1]:=a;
- result.RawComponents[2,2]:=a;
- result.RawComponents[2,3]:=a;
- result.RawComponents[3,0]:=a;
- result.RawComponents[3,1]:=a;
- result.RawComponents[3,2]:=a;
- result.RawComponents[3,3]:=a;
+ result.m[0,0]:=a;
+ result.m[0,1]:=a;
+ result.m[0,2]:=a;
+ result.m[0,3]:=a;
+ result.m[1,0]:=a;
+ result.m[1,1]:=a;
+ result.m[1,2]:=a;
+ result.m[1,3]:=a;
+ result.m[2,0]:=a;
+ result.m[2,1]:=a;
+ result.m[2,2]:=a;
+ result.m[2,3]:=a;
+ result.m[3,0]:=a;
+ result.m[3,1]:=a;
+ result.m[3,2]:=a;
+ result.m[3,3]:=a;
 end;
 
-class operator TMat4.=(const a,b:TMat4):boolean;
+class operator TMat4.=(constref a,b:TMat4):boolean;
 begin
- result:=SameValue(a.RawComponents[0,0],b.RawComponents[0,0]) and
-         SameValue(a.RawComponents[0,1],b.RawComponents[0,1]) and
-         SameValue(a.RawComponents[0,2],b.RawComponents[0,2]) and
-         SameValue(a.RawComponents[0,3],b.RawComponents[0,3]) and
-         SameValue(a.RawComponents[1,0],b.RawComponents[1,0]) and
-         SameValue(a.RawComponents[1,1],b.RawComponents[1,1]) and
-         SameValue(a.RawComponents[1,2],b.RawComponents[1,2]) and
-         SameValue(a.RawComponents[1,3],b.RawComponents[1,3]) and
-         SameValue(a.RawComponents[2,0],b.RawComponents[2,0]) and
-         SameValue(a.RawComponents[2,1],b.RawComponents[2,1]) and
-         SameValue(a.RawComponents[2,2],b.RawComponents[2,2]) and
-         SameValue(a.RawComponents[2,3],b.RawComponents[2,3]) and
-         SameValue(a.RawComponents[3,0],b.RawComponents[3,0]) and
-         SameValue(a.RawComponents[3,1],b.RawComponents[3,1]) and
-         SameValue(a.RawComponents[3,2],b.RawComponents[3,2]) and
-         SameValue(a.RawComponents[3,3],b.RawComponents[3,3]);
+ result:=SameValue(a.m[0,0],b.m[0,0]) and
+         SameValue(a.m[0,1],b.m[0,1]) and
+         SameValue(a.m[0,2],b.m[0,2]) and
+         SameValue(a.m[0,3],b.m[0,3]) and
+         SameValue(a.m[1,0],b.m[1,0]) and
+         SameValue(a.m[1,1],b.m[1,1]) and
+         SameValue(a.m[1,2],b.m[1,2]) and
+         SameValue(a.m[1,3],b.m[1,3]) and
+         SameValue(a.m[2,0],b.m[2,0]) and
+         SameValue(a.m[2,1],b.m[2,1]) and
+         SameValue(a.m[2,2],b.m[2,2]) and
+         SameValue(a.m[2,3],b.m[2,3]) and
+         SameValue(a.m[3,0],b.m[3,0]) and
+         SameValue(a.m[3,1],b.m[3,1]) and
+         SameValue(a.m[3,2],b.m[3,2]) and
+         SameValue(a.m[3,3],b.m[3,3]);
 end;
 
-class operator TMat4.<>(const a,b:TMat4):boolean;
+class operator TMat4.<>(constref a,b:TMat4):boolean;
 begin
- result:=(not SameValue(a.RawComponents[0,0],b.RawComponents[0,0])) or
-         (not SameValue(a.RawComponents[0,1],b.RawComponents[0,1])) or
-         (not SameValue(a.RawComponents[0,2],b.RawComponents[0,2])) or
-         (not SameValue(a.RawComponents[0,3],b.RawComponents[0,3])) or
-         (not SameValue(a.RawComponents[1,0],b.RawComponents[1,0])) or
-         (not SameValue(a.RawComponents[1,1],b.RawComponents[1,1])) or
-         (not SameValue(a.RawComponents[1,2],b.RawComponents[1,2])) or
-         (not SameValue(a.RawComponents[1,3],b.RawComponents[1,3])) or
-         (not SameValue(a.RawComponents[2,0],b.RawComponents[2,0])) or
-         (not SameValue(a.RawComponents[2,1],b.RawComponents[2,1])) or
-         (not SameValue(a.RawComponents[2,2],b.RawComponents[2,2])) or
-         (not SameValue(a.RawComponents[2,3],b.RawComponents[2,3])) or
-         (not SameValue(a.RawComponents[3,0],b.RawComponents[3,0])) or
-         (not SameValue(a.RawComponents[3,1],b.RawComponents[3,1])) or
-         (not SameValue(a.RawComponents[3,2],b.RawComponents[3,2])) or
-         (not SameValue(a.RawComponents[3,3],b.RawComponents[3,3]));
+ result:=(not SameValue(a.m[0,0],b.m[0,0])) or
+         (not SameValue(a.m[0,1],b.m[0,1])) or
+         (not SameValue(a.m[0,2],b.m[0,2])) or
+         (not SameValue(a.m[0,3],b.m[0,3])) or
+         (not SameValue(a.m[1,0],b.m[1,0])) or
+         (not SameValue(a.m[1,1],b.m[1,1])) or
+         (not SameValue(a.m[1,2],b.m[1,2])) or
+         (not SameValue(a.m[1,3],b.m[1,3])) or
+         (not SameValue(a.m[2,0],b.m[2,0])) or
+         (not SameValue(a.m[2,1],b.m[2,1])) or
+         (not SameValue(a.m[2,2],b.m[2,2])) or
+         (not SameValue(a.m[2,3],b.m[2,3])) or
+         (not SameValue(a.m[3,0],b.m[3,0])) or
+         (not SameValue(a.m[3,1],b.m[3,1])) or
+         (not SameValue(a.m[3,2],b.m[3,2])) or
+         (not SameValue(a.m[3,3],b.m[3,3]));
 end;
 
-class operator TMat4.+(const a,b:TMat4):TMat4;
+class operator TMat4.+(constref a,b:TMat4):TMat4;
 begin
- result.RawComponents[0,0]:=a.RawComponents[0,0]+b.RawComponents[0,0];
- result.RawComponents[0,1]:=a.RawComponents[0,1]+b.RawComponents[0,1];
- result.RawComponents[0,2]:=a.RawComponents[0,2]+b.RawComponents[0,2];
- result.RawComponents[0,3]:=a.RawComponents[0,3]+b.RawComponents[0,3];
- result.RawComponents[1,0]:=a.RawComponents[1,0]+b.RawComponents[1,0];
- result.RawComponents[1,1]:=a.RawComponents[1,1]+b.RawComponents[1,1];
- result.RawComponents[1,2]:=a.RawComponents[1,2]+b.RawComponents[1,2];
- result.RawComponents[1,3]:=a.RawComponents[1,3]+b.RawComponents[1,3];
- result.RawComponents[2,0]:=a.RawComponents[2,0]+b.RawComponents[2,0];
- result.RawComponents[2,1]:=a.RawComponents[2,1]+b.RawComponents[2,1];
- result.RawComponents[2,2]:=a.RawComponents[2,2]+b.RawComponents[2,2];
- result.RawComponents[2,3]:=a.RawComponents[2,3]+b.RawComponents[2,3];
- result.RawComponents[3,0]:=a.RawComponents[3,0]+b.RawComponents[3,0];
- result.RawComponents[3,1]:=a.RawComponents[3,1]+b.RawComponents[3,1];
- result.RawComponents[3,2]:=a.RawComponents[3,2]+b.RawComponents[3,2];
- result.RawComponents[3,3]:=a.RawComponents[3,3]+b.RawComponents[3,3];
+ result.m[0,0]:=a.m[0,0]+b.m[0,0];
+ result.m[0,1]:=a.m[0,1]+b.m[0,1];
+ result.m[0,2]:=a.m[0,2]+b.m[0,2];
+ result.m[0,3]:=a.m[0,3]+b.m[0,3];
+ result.m[1,0]:=a.m[1,0]+b.m[1,0];
+ result.m[1,1]:=a.m[1,1]+b.m[1,1];
+ result.m[1,2]:=a.m[1,2]+b.m[1,2];
+ result.m[1,3]:=a.m[1,3]+b.m[1,3];
+ result.m[2,0]:=a.m[2,0]+b.m[2,0];
+ result.m[2,1]:=a.m[2,1]+b.m[2,1];
+ result.m[2,2]:=a.m[2,2]+b.m[2,2];
+ result.m[2,3]:=a.m[2,3]+b.m[2,3];
+ result.m[3,0]:=a.m[3,0]+b.m[3,0];
+ result.m[3,1]:=a.m[3,1]+b.m[3,1];
+ result.m[3,2]:=a.m[3,2]+b.m[3,2];
+ result.m[3,3]:=a.m[3,3]+b.m[3,3];
 end;
 
-class operator TMat4.+(const a:TMat4;const b:TScalar):TMat4;
+class operator TMat4.+(constref a:TMat4;const b:TScalar):TMat4;
 begin
- result.RawComponents[0,0]:=a.RawComponents[0,0]+b;
- result.RawComponents[0,1]:=a.RawComponents[0,1]+b;
- result.RawComponents[0,2]:=a.RawComponents[0,2]+b;
- result.RawComponents[0,3]:=a.RawComponents[0,3]+b;
- result.RawComponents[1,0]:=a.RawComponents[1,0]+b;
- result.RawComponents[1,1]:=a.RawComponents[1,1]+b;
- result.RawComponents[1,2]:=a.RawComponents[1,2]+b;
- result.RawComponents[1,3]:=a.RawComponents[1,3]+b;
- result.RawComponents[2,0]:=a.RawComponents[2,0]+b;
- result.RawComponents[2,1]:=a.RawComponents[2,1]+b;
- result.RawComponents[2,2]:=a.RawComponents[2,2]+b;
- result.RawComponents[2,3]:=a.RawComponents[2,3]+b;
- result.RawComponents[3,0]:=a.RawComponents[3,0]+b;
- result.RawComponents[3,1]:=a.RawComponents[3,1]+b;
- result.RawComponents[3,2]:=a.RawComponents[3,2]+b;
- result.RawComponents[3,3]:=a.RawComponents[3,3]+b;
+ result.m[0,0]:=a.m[0,0]+b;
+ result.m[0,1]:=a.m[0,1]+b;
+ result.m[0,2]:=a.m[0,2]+b;
+ result.m[0,3]:=a.m[0,3]+b;
+ result.m[1,0]:=a.m[1,0]+b;
+ result.m[1,1]:=a.m[1,1]+b;
+ result.m[1,2]:=a.m[1,2]+b;
+ result.m[1,3]:=a.m[1,3]+b;
+ result.m[2,0]:=a.m[2,0]+b;
+ result.m[2,1]:=a.m[2,1]+b;
+ result.m[2,2]:=a.m[2,2]+b;
+ result.m[2,3]:=a.m[2,3]+b;
+ result.m[3,0]:=a.m[3,0]+b;
+ result.m[3,1]:=a.m[3,1]+b;
+ result.m[3,2]:=a.m[3,2]+b;
+ result.m[3,3]:=a.m[3,3]+b;
 end;
 
-class operator TMat4.+(const a:TScalar;const b:TMat4):TMat4;
+class operator TMat4.+(const a:TScalar;constref b:TMat4):TMat4;
 begin
- result.RawComponents[0,0]:=a+b.RawComponents[0,0];
- result.RawComponents[0,1]:=a+b.RawComponents[0,1];
- result.RawComponents[0,2]:=a+b.RawComponents[0,2];
- result.RawComponents[0,3]:=a+b.RawComponents[0,3];
- result.RawComponents[1,0]:=a+b.RawComponents[1,0];
- result.RawComponents[1,1]:=a+b.RawComponents[1,1];
- result.RawComponents[1,2]:=a+b.RawComponents[1,2];
- result.RawComponents[1,3]:=a+b.RawComponents[1,3];
- result.RawComponents[2,0]:=a+b.RawComponents[2,0];
- result.RawComponents[2,1]:=a+b.RawComponents[2,1];
- result.RawComponents[2,2]:=a+b.RawComponents[2,2];
- result.RawComponents[2,3]:=a+b.RawComponents[2,3];
- result.RawComponents[3,0]:=a+b.RawComponents[3,0];
- result.RawComponents[3,1]:=a+b.RawComponents[3,1];
- result.RawComponents[3,2]:=a+b.RawComponents[3,2];
- result.RawComponents[3,3]:=a+b.RawComponents[3,3];
+ result.m[0,0]:=a+b.m[0,0];
+ result.m[0,1]:=a+b.m[0,1];
+ result.m[0,2]:=a+b.m[0,2];
+ result.m[0,3]:=a+b.m[0,3];
+ result.m[1,0]:=a+b.m[1,0];
+ result.m[1,1]:=a+b.m[1,1];
+ result.m[1,2]:=a+b.m[1,2];
+ result.m[1,3]:=a+b.m[1,3];
+ result.m[2,0]:=a+b.m[2,0];
+ result.m[2,1]:=a+b.m[2,1];
+ result.m[2,2]:=a+b.m[2,2];
+ result.m[2,3]:=a+b.m[2,3];
+ result.m[3,0]:=a+b.m[3,0];
+ result.m[3,1]:=a+b.m[3,1];
+ result.m[3,2]:=a+b.m[3,2];
+ result.m[3,3]:=a+b.m[3,3];
 end;
 
-class operator TMat4.-(const a,b:TMat4):TMat4;
+class operator TMat4.-(constref a,b:TMat4):TMat4;
 begin
- result.RawComponents[0,0]:=a.RawComponents[0,0]-b.RawComponents[0,0];
- result.RawComponents[0,1]:=a.RawComponents[0,1]-b.RawComponents[0,1];
- result.RawComponents[0,2]:=a.RawComponents[0,2]-b.RawComponents[0,2];
- result.RawComponents[0,3]:=a.RawComponents[0,3]-b.RawComponents[0,3];
- result.RawComponents[1,0]:=a.RawComponents[1,0]-b.RawComponents[1,0];
- result.RawComponents[1,1]:=a.RawComponents[1,1]-b.RawComponents[1,1];
- result.RawComponents[1,2]:=a.RawComponents[1,2]-b.RawComponents[1,2];
- result.RawComponents[1,3]:=a.RawComponents[1,3]-b.RawComponents[1,3];
- result.RawComponents[2,0]:=a.RawComponents[2,0]-b.RawComponents[2,0];
- result.RawComponents[2,1]:=a.RawComponents[2,1]-b.RawComponents[2,1];
- result.RawComponents[2,2]:=a.RawComponents[2,2]-b.RawComponents[2,2];
- result.RawComponents[2,3]:=a.RawComponents[2,3]-b.RawComponents[2,3];
- result.RawComponents[3,0]:=a.RawComponents[3,0]-b.RawComponents[3,0];
- result.RawComponents[3,1]:=a.RawComponents[3,1]-b.RawComponents[3,1];
- result.RawComponents[3,2]:=a.RawComponents[3,2]-b.RawComponents[3,2];
- result.RawComponents[3,3]:=a.RawComponents[3,3]-b.RawComponents[3,3];
+ result.m[0,0]:=a.m[0,0]-b.m[0,0];
+ result.m[0,1]:=a.m[0,1]-b.m[0,1];
+ result.m[0,2]:=a.m[0,2]-b.m[0,2];
+ result.m[0,3]:=a.m[0,3]-b.m[0,3];
+ result.m[1,0]:=a.m[1,0]-b.m[1,0];
+ result.m[1,1]:=a.m[1,1]-b.m[1,1];
+ result.m[1,2]:=a.m[1,2]-b.m[1,2];
+ result.m[1,3]:=a.m[1,3]-b.m[1,3];
+ result.m[2,0]:=a.m[2,0]-b.m[2,0];
+ result.m[2,1]:=a.m[2,1]-b.m[2,1];
+ result.m[2,2]:=a.m[2,2]-b.m[2,2];
+ result.m[2,3]:=a.m[2,3]-b.m[2,3];
+ result.m[3,0]:=a.m[3,0]-b.m[3,0];
+ result.m[3,1]:=a.m[3,1]-b.m[3,1];
+ result.m[3,2]:=a.m[3,2]-b.m[3,2];
+ result.m[3,3]:=a.m[3,3]-b.m[3,3];
 end;
 
-class operator TMat4.-(const a:TMat4;const b:TScalar):TMat4;
+class operator TMat4.-(constref a:TMat4;const b:TScalar):TMat4;
 begin
- result.RawComponents[0,0]:=a.RawComponents[0,0]-b;
- result.RawComponents[0,1]:=a.RawComponents[0,1]-b;
- result.RawComponents[0,2]:=a.RawComponents[0,2]-b;
- result.RawComponents[0,3]:=a.RawComponents[0,3]-b;
- result.RawComponents[1,0]:=a.RawComponents[1,0]-b;
- result.RawComponents[1,1]:=a.RawComponents[1,1]-b;
- result.RawComponents[1,2]:=a.RawComponents[1,2]-b;
- result.RawComponents[1,3]:=a.RawComponents[1,3]-b;
- result.RawComponents[2,0]:=a.RawComponents[2,0]-b;
- result.RawComponents[2,1]:=a.RawComponents[2,1]-b;
- result.RawComponents[2,2]:=a.RawComponents[2,2]-b;
- result.RawComponents[2,3]:=a.RawComponents[2,3]-b;
- result.RawComponents[3,0]:=a.RawComponents[3,0]-b;
- result.RawComponents[3,1]:=a.RawComponents[3,1]-b;
- result.RawComponents[3,2]:=a.RawComponents[3,2]-b;
- result.RawComponents[3,3]:=a.RawComponents[3,3]-b;
+ result.m[0,0]:=a.m[0,0]-b;
+ result.m[0,1]:=a.m[0,1]-b;
+ result.m[0,2]:=a.m[0,2]-b;
+ result.m[0,3]:=a.m[0,3]-b;
+ result.m[1,0]:=a.m[1,0]-b;
+ result.m[1,1]:=a.m[1,1]-b;
+ result.m[1,2]:=a.m[1,2]-b;
+ result.m[1,3]:=a.m[1,3]-b;
+ result.m[2,0]:=a.m[2,0]-b;
+ result.m[2,1]:=a.m[2,1]-b;
+ result.m[2,2]:=a.m[2,2]-b;
+ result.m[2,3]:=a.m[2,3]-b;
+ result.m[3,0]:=a.m[3,0]-b;
+ result.m[3,1]:=a.m[3,1]-b;
+ result.m[3,2]:=a.m[3,2]-b;
+ result.m[3,3]:=a.m[3,3]-b;
 end;
 
-class operator TMat4.-(const a:TScalar;const b:TMat4): TMat4;
+class operator TMat4.-(const a:TScalar;constref b:TMat4): TMat4;
 begin
- result.RawComponents[0,0]:=a-b.RawComponents[0,0];
- result.RawComponents[0,1]:=a-b.RawComponents[0,1];
- result.RawComponents[0,2]:=a-b.RawComponents[0,2];
- result.RawComponents[0,3]:=a-b.RawComponents[0,3];
- result.RawComponents[1,0]:=a-b.RawComponents[1,0];
- result.RawComponents[1,1]:=a-b.RawComponents[1,1];
- result.RawComponents[1,2]:=a-b.RawComponents[1,2];
- result.RawComponents[1,3]:=a-b.RawComponents[1,3];
- result.RawComponents[2,0]:=a-b.RawComponents[2,0];
- result.RawComponents[2,1]:=a-b.RawComponents[2,1];
- result.RawComponents[2,2]:=a-b.RawComponents[2,2];
- result.RawComponents[2,3]:=a-b.RawComponents[2,3];
- result.RawComponents[3,0]:=a-b.RawComponents[3,0];
- result.RawComponents[3,1]:=a-b.RawComponents[3,1];
- result.RawComponents[3,2]:=a-b.RawComponents[3,2];
- result.RawComponents[3,3]:=a-b.RawComponents[3,3];
+ result.m[0,0]:=a-b.m[0,0];
+ result.m[0,1]:=a-b.m[0,1];
+ result.m[0,2]:=a-b.m[0,2];
+ result.m[0,3]:=a-b.m[0,3];
+ result.m[1,0]:=a-b.m[1,0];
+ result.m[1,1]:=a-b.m[1,1];
+ result.m[1,2]:=a-b.m[1,2];
+ result.m[1,3]:=a-b.m[1,3];
+ result.m[2,0]:=a-b.m[2,0];
+ result.m[2,1]:=a-b.m[2,1];
+ result.m[2,2]:=a-b.m[2,2];
+ result.m[2,3]:=a-b.m[2,3];
+ result.m[3,0]:=a-b.m[3,0];
+ result.m[3,1]:=a-b.m[3,1];
+ result.m[3,2]:=a-b.m[3,2];
+ result.m[3,3]:=a-b.m[3,3];
 end;
 
-class operator TMat4.*(const b,a:TMat4):TMat4;
+class operator TMat4.*(constref b,a:TMat4):TMat4;
 begin
- result.RawComponents[0,0]:=(a.RawComponents[0,0]*b.RawComponents[0,0])+(a.RawComponents[0,1]*b.RawComponents[1,0])+(a.RawComponents[0,2]*b.RawComponents[2,0])+(a.RawComponents[0,3]*b.RawComponents[3,0]);
- result.RawComponents[0,1]:=(a.RawComponents[0,0]*b.RawComponents[0,1])+(a.RawComponents[0,1]*b.RawComponents[1,1])+(a.RawComponents[0,2]*b.RawComponents[2,1])+(a.RawComponents[0,3]*b.RawComponents[3,1]);
- result.RawComponents[0,2]:=(a.RawComponents[0,0]*b.RawComponents[0,2])+(a.RawComponents[0,1]*b.RawComponents[1,2])+(a.RawComponents[0,2]*b.RawComponents[2,2])+(a.RawComponents[0,3]*b.RawComponents[3,2]);
- result.RawComponents[0,3]:=(a.RawComponents[0,0]*b.RawComponents[0,3])+(a.RawComponents[0,1]*b.RawComponents[1,3])+(a.RawComponents[0,2]*b.RawComponents[2,3])+(a.RawComponents[0,3]*b.RawComponents[3,3]);
- result.RawComponents[1,0]:=(a.RawComponents[1,0]*b.RawComponents[0,0])+(a.RawComponents[1,1]*b.RawComponents[1,0])+(a.RawComponents[1,2]*b.RawComponents[2,0])+(a.RawComponents[1,3]*b.RawComponents[3,0]);
- result.RawComponents[1,1]:=(a.RawComponents[1,0]*b.RawComponents[0,1])+(a.RawComponents[1,1]*b.RawComponents[1,1])+(a.RawComponents[1,2]*b.RawComponents[2,1])+(a.RawComponents[1,3]*b.RawComponents[3,1]);
- result.RawComponents[1,2]:=(a.RawComponents[1,0]*b.RawComponents[0,2])+(a.RawComponents[1,1]*b.RawComponents[1,2])+(a.RawComponents[1,2]*b.RawComponents[2,2])+(a.RawComponents[1,3]*b.RawComponents[3,2]);
- result.RawComponents[1,3]:=(a.RawComponents[1,0]*b.RawComponents[0,3])+(a.RawComponents[1,1]*b.RawComponents[1,3])+(a.RawComponents[1,2]*b.RawComponents[2,3])+(a.RawComponents[1,3]*b.RawComponents[3,3]);
- result.RawComponents[2,0]:=(a.RawComponents[2,0]*b.RawComponents[0,0])+(a.RawComponents[2,1]*b.RawComponents[1,0])+(a.RawComponents[2,2]*b.RawComponents[2,0])+(a.RawComponents[2,3]*b.RawComponents[3,0]);
- result.RawComponents[2,1]:=(a.RawComponents[2,0]*b.RawComponents[0,1])+(a.RawComponents[2,1]*b.RawComponents[1,1])+(a.RawComponents[2,2]*b.RawComponents[2,1])+(a.RawComponents[2,3]*b.RawComponents[3,1]);
- result.RawComponents[2,2]:=(a.RawComponents[2,0]*b.RawComponents[0,2])+(a.RawComponents[2,1]*b.RawComponents[1,2])+(a.RawComponents[2,2]*b.RawComponents[2,2])+(a.RawComponents[2,3]*b.RawComponents[3,2]);
- result.RawComponents[2,3]:=(a.RawComponents[2,0]*b.RawComponents[0,3])+(a.RawComponents[2,1]*b.RawComponents[1,3])+(a.RawComponents[2,2]*b.RawComponents[2,3])+(a.RawComponents[2,3]*b.RawComponents[3,3]);
- result.RawComponents[3,0]:=(a.RawComponents[3,0]*b.RawComponents[0,0])+(a.RawComponents[3,1]*b.RawComponents[1,0])+(a.RawComponents[3,2]*b.RawComponents[2,0])+(a.RawComponents[3,3]*b.RawComponents[3,0]);
- result.RawComponents[3,1]:=(a.RawComponents[3,0]*b.RawComponents[0,1])+(a.RawComponents[3,1]*b.RawComponents[1,1])+(a.RawComponents[3,2]*b.RawComponents[2,1])+(a.RawComponents[3,3]*b.RawComponents[3,1]);
- result.RawComponents[3,2]:=(a.RawComponents[3,0]*b.RawComponents[0,2])+(a.RawComponents[3,1]*b.RawComponents[1,2])+(a.RawComponents[3,2]*b.RawComponents[2,2])+(a.RawComponents[3,3]*b.RawComponents[3,2]);
- result.RawComponents[3,3]:=(a.RawComponents[3,0]*b.RawComponents[0,3])+(a.RawComponents[3,1]*b.RawComponents[1,3])+(a.RawComponents[3,2]*b.RawComponents[2,3])+(a.RawComponents[3,3]*b.RawComponents[3,3]);
+ result.m[0,0]:=(a.m[0,0]*b.m[0,0])+(a.m[0,1]*b.m[1,0])+(a.m[0,2]*b.m[2,0])+(a.m[0,3]*b.m[3,0]);
+ result.m[0,1]:=(a.m[0,0]*b.m[0,1])+(a.m[0,1]*b.m[1,1])+(a.m[0,2]*b.m[2,1])+(a.m[0,3]*b.m[3,1]);
+ result.m[0,2]:=(a.m[0,0]*b.m[0,2])+(a.m[0,1]*b.m[1,2])+(a.m[0,2]*b.m[2,2])+(a.m[0,3]*b.m[3,2]);
+ result.m[0,3]:=(a.m[0,0]*b.m[0,3])+(a.m[0,1]*b.m[1,3])+(a.m[0,2]*b.m[2,3])+(a.m[0,3]*b.m[3,3]);
+ result.m[1,0]:=(a.m[1,0]*b.m[0,0])+(a.m[1,1]*b.m[1,0])+(a.m[1,2]*b.m[2,0])+(a.m[1,3]*b.m[3,0]);
+ result.m[1,1]:=(a.m[1,0]*b.m[0,1])+(a.m[1,1]*b.m[1,1])+(a.m[1,2]*b.m[2,1])+(a.m[1,3]*b.m[3,1]);
+ result.m[1,2]:=(a.m[1,0]*b.m[0,2])+(a.m[1,1]*b.m[1,2])+(a.m[1,2]*b.m[2,2])+(a.m[1,3]*b.m[3,2]);
+ result.m[1,3]:=(a.m[1,0]*b.m[0,3])+(a.m[1,1]*b.m[1,3])+(a.m[1,2]*b.m[2,3])+(a.m[1,3]*b.m[3,3]);
+ result.m[2,0]:=(a.m[2,0]*b.m[0,0])+(a.m[2,1]*b.m[1,0])+(a.m[2,2]*b.m[2,0])+(a.m[2,3]*b.m[3,0]);
+ result.m[2,1]:=(a.m[2,0]*b.m[0,1])+(a.m[2,1]*b.m[1,1])+(a.m[2,2]*b.m[2,1])+(a.m[2,3]*b.m[3,1]);
+ result.m[2,2]:=(a.m[2,0]*b.m[0,2])+(a.m[2,1]*b.m[1,2])+(a.m[2,2]*b.m[2,2])+(a.m[2,3]*b.m[3,2]);
+ result.m[2,3]:=(a.m[2,0]*b.m[0,3])+(a.m[2,1]*b.m[1,3])+(a.m[2,2]*b.m[2,3])+(a.m[2,3]*b.m[3,3]);
+ result.m[3,0]:=(a.m[3,0]*b.m[0,0])+(a.m[3,1]*b.m[1,0])+(a.m[3,2]*b.m[2,0])+(a.m[3,3]*b.m[3,0]);
+ result.m[3,1]:=(a.m[3,0]*b.m[0,1])+(a.m[3,1]*b.m[1,1])+(a.m[3,2]*b.m[2,1])+(a.m[3,3]*b.m[3,1]);
+ result.m[3,2]:=(a.m[3,0]*b.m[0,2])+(a.m[3,1]*b.m[1,2])+(a.m[3,2]*b.m[2,2])+(a.m[3,3]*b.m[3,2]);
+ result.m[3,3]:=(a.m[3,0]*b.m[0,3])+(a.m[3,1]*b.m[1,3])+(a.m[3,2]*b.m[2,3])+(a.m[3,3]*b.m[3,3]);
 end;
 
-class operator TMat4.*(const a:TMat4;const b:TScalar):TMat4;
+class operator TMat4.*(constref a:TMat4;const b:TScalar):TMat4;
 begin
- result.RawComponents[0,0]:=a.RawComponents[0,0]*b;
- result.RawComponents[0,1]:=a.RawComponents[0,1]*b;
- result.RawComponents[0,2]:=a.RawComponents[0,2]*b;
- result.RawComponents[0,3]:=a.RawComponents[0,3]*b;
- result.RawComponents[1,0]:=a.RawComponents[1,0]*b;
- result.RawComponents[1,1]:=a.RawComponents[1,1]*b;
- result.RawComponents[1,2]:=a.RawComponents[1,2]*b;
- result.RawComponents[1,3]:=a.RawComponents[1,3]*b;
- result.RawComponents[2,0]:=a.RawComponents[2,0]*b;
- result.RawComponents[2,1]:=a.RawComponents[2,1]*b;
- result.RawComponents[2,2]:=a.RawComponents[2,2]*b;
- result.RawComponents[2,3]:=a.RawComponents[2,3]*b;
- result.RawComponents[3,0]:=a.RawComponents[3,0]*b;
- result.RawComponents[3,1]:=a.RawComponents[3,1]*b;
- result.RawComponents[3,2]:=a.RawComponents[3,2]*b;
- result.RawComponents[3,3]:=a.RawComponents[3,3]*b;
+ result.m[0,0]:=a.m[0,0]*b;
+ result.m[0,1]:=a.m[0,1]*b;
+ result.m[0,2]:=a.m[0,2]*b;
+ result.m[0,3]:=a.m[0,3]*b;
+ result.m[1,0]:=a.m[1,0]*b;
+ result.m[1,1]:=a.m[1,1]*b;
+ result.m[1,2]:=a.m[1,2]*b;
+ result.m[1,3]:=a.m[1,3]*b;
+ result.m[2,0]:=a.m[2,0]*b;
+ result.m[2,1]:=a.m[2,1]*b;
+ result.m[2,2]:=a.m[2,2]*b;
+ result.m[2,3]:=a.m[2,3]*b;
+ result.m[3,0]:=a.m[3,0]*b;
+ result.m[3,1]:=a.m[3,1]*b;
+ result.m[3,2]:=a.m[3,2]*b;
+ result.m[3,3]:=a.m[3,3]*b;
 end;
 
-class operator TMat4.*(const a:TScalar;const b:TMat4):TMat4;
+class operator TMat4.*(const a:TScalar;constref b:TMat4):TMat4;
 begin
- result.RawComponents[0,0]:=a*b.RawComponents[0,0];
- result.RawComponents[0,1]:=a*b.RawComponents[0,1];
- result.RawComponents[0,2]:=a*b.RawComponents[0,2];
- result.RawComponents[0,3]:=a*b.RawComponents[0,3];
- result.RawComponents[1,0]:=a*b.RawComponents[1,0];
- result.RawComponents[1,1]:=a*b.RawComponents[1,1];
- result.RawComponents[1,2]:=a*b.RawComponents[1,2];
- result.RawComponents[1,3]:=a*b.RawComponents[1,3];
- result.RawComponents[2,0]:=a*b.RawComponents[2,0];
- result.RawComponents[2,1]:=a*b.RawComponents[2,1];
- result.RawComponents[2,2]:=a*b.RawComponents[2,2];
- result.RawComponents[2,3]:=a*b.RawComponents[2,3];
- result.RawComponents[3,0]:=a*b.RawComponents[3,0];
- result.RawComponents[3,1]:=a*b.RawComponents[3,1];
- result.RawComponents[3,2]:=a*b.RawComponents[3,2];
- result.RawComponents[3,3]:=a*b.RawComponents[3,3];
+ result.m[0,0]:=a*b.m[0,0];
+ result.m[0,1]:=a*b.m[0,1];
+ result.m[0,2]:=a*b.m[0,2];
+ result.m[0,3]:=a*b.m[0,3];
+ result.m[1,0]:=a*b.m[1,0];
+ result.m[1,1]:=a*b.m[1,1];
+ result.m[1,2]:=a*b.m[1,2];
+ result.m[1,3]:=a*b.m[1,3];
+ result.m[2,0]:=a*b.m[2,0];
+ result.m[2,1]:=a*b.m[2,1];
+ result.m[2,2]:=a*b.m[2,2];
+ result.m[2,3]:=a*b.m[2,3];
+ result.m[3,0]:=a*b.m[3,0];
+ result.m[3,1]:=a*b.m[3,1];
+ result.m[3,2]:=a*b.m[3,2];
+ result.m[3,3]:=a*b.m[3,3];
 end;
 
-class operator TMat4.*(const a:TMat4;const b:TVec3):TVec3;
+class operator TMat4.*(constref a:TMat4;constref b:TVec3):TVec3;
 begin
- result.x:=(a.RawComponents[0,0]*b.x)+(a.RawComponents[1,0]*b.y)+(a.RawComponents[2,0]*b.z)+a.RawComponents[3,0];
- result.y:=(a.RawComponents[0,1]*b.x)+(a.RawComponents[1,1]*b.y)+(a.RawComponents[2,1]*b.z)+a.RawComponents[3,1];
- result.z:=(a.RawComponents[0,2]*b.x)+(a.RawComponents[1,2]*b.y)+(a.RawComponents[2,2]*b.z)+a.RawComponents[3,2];
+ result.x:=(a.m[0,0]*b.x)+(a.m[1,0]*b.y)+(a.m[2,0]*b.z)+a.m[3,0];
+ result.y:=(a.m[0,1]*b.x)+(a.m[1,1]*b.y)+(a.m[2,1]*b.z)+a.m[3,1];
+ result.z:=(a.m[0,2]*b.x)+(a.m[1,2]*b.y)+(a.m[2,2]*b.z)+a.m[3,2];
 end;
 
-class operator TMat4.*(const a:TVec3;const b:TMat4):TVec3;
+class operator TMat4.*(constref a:TVec3;constref b:TMat4):TVec3;
 begin
- result.x:=(a.x*b.RawComponents[0,0])+(a.y*b.RawComponents[0,1])+(a.z*b.RawComponents[0,2])+b.RawComponents[0,3];
- result.y:=(a.x*b.RawComponents[1,0])+(a.y*b.RawComponents[1,1])+(a.z*b.RawComponents[1,2])+b.RawComponents[1,3];
- result.z:=(a.x*b.RawComponents[2,0])+(a.y*b.RawComponents[2,1])+(a.z*b.RawComponents[2,2])+b.RawComponents[2,3];
+ result.x:=(a.x*b.m[0,0])+(a.y*b.m[0,1])+(a.z*b.m[0,2])+b.m[0,3];
+ result.y:=(a.x*b.m[1,0])+(a.y*b.m[1,1])+(a.z*b.m[1,2])+b.m[1,3];
+ result.z:=(a.x*b.m[2,0])+(a.y*b.m[2,1])+(a.z*b.m[2,2])+b.m[2,3];
 end;
 
-class operator TMat4.*(const a:TMat4;const b:TVec4):TVec4;
+class operator TMat4.*(constref a:TMat4;constref b:TVec4):TVec4;
 begin
- result.x:=(a.RawComponents[0,0]*b.x)+(a.RawComponents[1,0]*b.y)+(a.RawComponents[2,0]*b.z)+(a.RawComponents[3,0]*b.w);
- result.y:=(a.RawComponents[0,1]*b.x)+(a.RawComponents[1,1]*b.y)+(a.RawComponents[2,1]*b.z)+(a.RawComponents[3,1]*b.w);
- result.z:=(a.RawComponents[0,2]*b.x)+(a.RawComponents[1,2]*b.y)+(a.RawComponents[2,2]*b.z)+(a.RawComponents[3,2]*b.w);
- result.w:=(a.RawComponents[0,3]*b.x)+(a.RawComponents[1,3]*b.y)+(a.RawComponents[2,3]*b.z)+(a.RawComponents[3,3]*b.w);
+ result.x:=(a.m[0,0]*b.x)+(a.m[1,0]*b.y)+(a.m[2,0]*b.z)+(a.m[3,0]*b.w);
+ result.y:=(a.m[0,1]*b.x)+(a.m[1,1]*b.y)+(a.m[2,1]*b.z)+(a.m[3,1]*b.w);
+ result.z:=(a.m[0,2]*b.x)+(a.m[1,2]*b.y)+(a.m[2,2]*b.z)+(a.m[3,2]*b.w);
+ result.w:=(a.m[0,3]*b.x)+(a.m[1,3]*b.y)+(a.m[2,3]*b.z)+(a.m[3,3]*b.w);
 end;
 
-class operator TMat4.*(const a:TVec4;const b:TMat4):TVec4;
+class operator TMat4.*(constref a:TVec4;constref b:TMat4):TVec4;
 begin
- result.x:=(a.x*b.RawComponents[0,0])+(a.y*b.RawComponents[0,1])+(a.z*b.RawComponents[0,2])+(a.w*b.RawComponents[0,3]);
- result.y:=(a.x*b.RawComponents[1,0])+(a.y*b.RawComponents[1,1])+(a.z*b.RawComponents[1,2])+(a.w*b.RawComponents[1,3]);
- result.z:=(a.x*b.RawComponents[2,0])+(a.y*b.RawComponents[2,1])+(a.z*b.RawComponents[2,2])+(a.w*b.RawComponents[2,3]);
- result.w:=(a.x*b.RawComponents[3,0])+(a.y*b.RawComponents[3,1])+(a.z*b.RawComponents[3,2])+(a.w*b.RawComponents[3,3]);
+ result.x:=(a.x*b.m[0,0])+(a.y*b.m[0,1])+(a.z*b.m[0,2])+(a.w*b.m[0,3]);
+ result.y:=(a.x*b.m[1,0])+(a.y*b.m[1,1])+(a.z*b.m[1,2])+(a.w*b.m[1,3]);
+ result.z:=(a.x*b.m[2,0])+(a.y*b.m[2,1])+(a.z*b.m[2,2])+(a.w*b.m[2,3]);
+ result.w:=(a.x*b.m[3,0])+(a.y*b.m[3,1])+(a.z*b.m[3,2])+(a.w*b.m[3,3]);
 end;
 
-class operator TMat4./(const a,b:TMat4):TMat4;
+class operator TMat4./(constref a,b:TMat4):TMat4;
 begin
  result:=a*b.Inverse;
 end;
 
-class operator TMat4./(const a:TMat4;const b:TScalar):TMat4;
+class operator TMat4./(constref a:TMat4;const b:TScalar):TMat4;
 begin
- result.RawComponents[0,0]:=a.RawComponents[0,0]/b;
- result.RawComponents[0,1]:=a.RawComponents[0,1]/b;
- result.RawComponents[0,2]:=a.RawComponents[0,2]/b;
- result.RawComponents[0,3]:=a.RawComponents[0,3]/b;
- result.RawComponents[1,0]:=a.RawComponents[1,0]/b;
- result.RawComponents[1,1]:=a.RawComponents[1,1]/b;
- result.RawComponents[1,2]:=a.RawComponents[1,2]/b;
- result.RawComponents[1,3]:=a.RawComponents[1,3]/b;
- result.RawComponents[2,0]:=a.RawComponents[2,0]/b;
- result.RawComponents[2,1]:=a.RawComponents[2,1]/b;
- result.RawComponents[2,2]:=a.RawComponents[2,2]/b;
- result.RawComponents[2,3]:=a.RawComponents[2,3]/b;
- result.RawComponents[3,0]:=a.RawComponents[3,0]/b;
- result.RawComponents[3,1]:=a.RawComponents[3,1]/b;
- result.RawComponents[3,2]:=a.RawComponents[3,2]/b;
- result.RawComponents[3,3]:=a.RawComponents[3,3]/b;
+ result.m[0,0]:=a.m[0,0]/b;
+ result.m[0,1]:=a.m[0,1]/b;
+ result.m[0,2]:=a.m[0,2]/b;
+ result.m[0,3]:=a.m[0,3]/b;
+ result.m[1,0]:=a.m[1,0]/b;
+ result.m[1,1]:=a.m[1,1]/b;
+ result.m[1,2]:=a.m[1,2]/b;
+ result.m[1,3]:=a.m[1,3]/b;
+ result.m[2,0]:=a.m[2,0]/b;
+ result.m[2,1]:=a.m[2,1]/b;
+ result.m[2,2]:=a.m[2,2]/b;
+ result.m[2,3]:=a.m[2,3]/b;
+ result.m[3,0]:=a.m[3,0]/b;
+ result.m[3,1]:=a.m[3,1]/b;
+ result.m[3,2]:=a.m[3,2]/b;
+ result.m[3,3]:=a.m[3,3]/b;
 end;
 
-class operator TMat4./(const a:TScalar;const b:TMat4):TMat4;
+class operator TMat4./(const a:TScalar;constref b:TMat4):TMat4;
 begin
- result.RawComponents[0,0]:=a/b.RawComponents[0,0];
- result.RawComponents[0,1]:=a/b.RawComponents[0,1];
- result.RawComponents[0,2]:=a/b.RawComponents[0,2];
- result.RawComponents[0,3]:=a/b.RawComponents[0,3];
- result.RawComponents[1,0]:=a/b.RawComponents[1,0];
- result.RawComponents[1,1]:=a/b.RawComponents[1,1];
- result.RawComponents[1,2]:=a/b.RawComponents[1,2];
- result.RawComponents[1,3]:=a/b.RawComponents[1,3];
- result.RawComponents[2,0]:=a/b.RawComponents[2,0];
- result.RawComponents[2,1]:=a/b.RawComponents[2,1];
- result.RawComponents[2,2]:=a/b.RawComponents[2,2];
- result.RawComponents[2,3]:=a/b.RawComponents[2,3];
- result.RawComponents[3,0]:=a/b.RawComponents[3,0];
- result.RawComponents[3,1]:=a/b.RawComponents[3,1];
- result.RawComponents[3,2]:=a/b.RawComponents[3,2];
- result.RawComponents[3,3]:=a/b.RawComponents[3,3];
+ result.m[0,0]:=a/b.m[0,0];
+ result.m[0,1]:=a/b.m[0,1];
+ result.m[0,2]:=a/b.m[0,2];
+ result.m[0,3]:=a/b.m[0,3];
+ result.m[1,0]:=a/b.m[1,0];
+ result.m[1,1]:=a/b.m[1,1];
+ result.m[1,2]:=a/b.m[1,2];
+ result.m[1,3]:=a/b.m[1,3];
+ result.m[2,0]:=a/b.m[2,0];
+ result.m[2,1]:=a/b.m[2,1];
+ result.m[2,2]:=a/b.m[2,2];
+ result.m[2,3]:=a/b.m[2,3];
+ result.m[3,0]:=a/b.m[3,0];
+ result.m[3,1]:=a/b.m[3,1];
+ result.m[3,2]:=a/b.m[3,2];
+ result.m[3,3]:=a/b.m[3,3];
 end;
 
 end.

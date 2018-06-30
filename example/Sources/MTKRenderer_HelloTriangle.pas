@@ -130,11 +130,14 @@ procedure SaveImage(view: MTKView; path: pchar);
 var
   texture: MTLTextureProtocol;
   bytesPerRow: integer;
-  region: MTLRegion;
-  context: CGContextRef;
-  colorSpace: CGColorSpaceRef;
-  image: CGImageRef;
-  bytes: pointer;
+  //region: MTLRegion;
+  //context: CGContextRef;
+  //colorSpace: CGColorSpaceRef;
+  //image: CGImageRef;
+  //bytes: pointer;
+
+  imageBuffer: MTLBufferProtocol;
+  blitEncoder: MTLBlitCommandEncoderProtocol;
 begin  
 	texture := view.currentDrawable.texture;
 	show(texture);
@@ -146,20 +149,49 @@ begin
 	Fatal(texture.textureType <> MTLTextureType2D, 'texture must be 2D');
 
 	bytesPerRow := 4 * texture.width;
-	region := MMTLRegionMake2D(0, 0, texture.width, texture.height);
+	bytesPerTexture := bytesPerRow * texture.height;
 
-	bytes := GetMem(bytesPerRow * texture.height);
-	texture.getBytes_bytesPerRow_fromRegion_mipmapLevel(bytes, bytesPerRow, region, 0);
+	imageBuffer := view.device.newBufferWithLength_options(bytesPerTexture, CPUCacheModeDefaultCache);
+	blitEncoder := commandBuffer.blitCommandEncoder;
 
-	colorSpace := CGColorSpaceCreateDeviceRGB;
-	
-	context := CGBitmapContextCreate(bytes, trunc(texture.width), trunc(texture.height), 8, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
-	image := CGBitmapContextCreateImage(context);
+	blitEncoder.copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toTexture_destinationSlice_destinationLevel_destinationOrigin(
+		0,  
+		0,  
+		MTLOriginMake(0, 0, 0),  
+		MTLSizeMake(: MTLSize.width: width, height: height, depth: 1),  
+		toBuffer: imageBuffer,  
+		destinationOffset: 0,  
+		destinationBytesPerRow: bytesPerRow,  
+		destinationBytesPerImage: 0
+		);
 
-	CFShow(image);
+    procedure copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toTexture_destinationSlice_destinationLevel_destinationOrigin (sourceTexture: MTLTextureProtocol; sourceSlice: NSUInteger; sourceLevel: NSUInteger; sourceOrigin: MTLOrigin; sourceSize: MTLSize; destinationTexture: MTLTextureProtocol; destinationSlice: NSUInteger; destinationLevel: NSUInteger; destinationOrigin: MTLOrigin); overload; message 'copyFromTexture:sourceSlice:sourceLevel:sourceOrigin:sourceSize:toTexture:destinationSlice:destinationLevel:destinationOrigin:';
 
-	CGColorSpaceRelease(colorSpace);
-	FreeMem(bytes);
+	let blitEncoder = commandBuffer.blitCommandEncoder()  
+	3. copy texture to shared buffer
+	blitEncoder.copyFromTexture(texture,  
+	                    sourceSlice: 0,  
+	                    sourceLevel: 0,  
+	                    sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),  
+	                    sourceSize: MTLSize.width: width, height: height, depth: 1),  
+	                    toBuffer: imageBuffer,  
+	                    destinationOffset: 0,  
+	                    destinationBytesPerRow: bytesPerRow,  
+	                    destinationBytesPerImage: 0)  
+
+
+	//region := MMTLRegionMake2D(0, 0, texture.width, texture.height);
+	//bytes := GetMem(bytesPerRow * texture.height);
+	//texture.getBytes_bytesPerRow_fromRegion_mipmapLevel(bytes, bytesPerRow, region, 0);
+
+	//colorSpace := CGColorSpaceCreateDeviceRGB;
+	//context := CGBitmapContextCreate(bytes, trunc(texture.width), trunc(texture.height), 8, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
+	//image := CGBitmapContextCreateImage(context);
+
+	//CFShow(image);
+
+	//CGColorSpaceRelease(colorSpace);
+	//FreeMem(bytes);
 end;
 
 procedure TMTKRenderer.drawTriangle;
