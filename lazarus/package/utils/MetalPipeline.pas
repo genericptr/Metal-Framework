@@ -12,6 +12,8 @@ type
 		view: MTKView;
 		device: MTLDeviceProtocol;
 		pipelineState: MTLRenderPipelineStateProtocol;
+
+		// available between begin/end frame
 		commandQueue: MTLCommandQueueProtocol;
 		commandBuffer: MTLCommandBufferProtocol;
 		renderEncoder: MTLRenderCommandEncoderProtocol;
@@ -19,6 +21,9 @@ type
 		// renderPassDescriptor can only be accessed directly after MTLBeginFrame
 		// and will be unlinked after subsequent calls to MTLSetXXX
 		renderPassDescriptor: MTLRenderPassDescriptor;
+
+		// ...
+		depthStencilState: MTLDepthStencilStateProtocol;
 	end;
 
 type
@@ -33,6 +38,7 @@ type
 	TMetalPipelineOptionsPtr = ^TMetalPipelineOptions;
 
 procedure MTLDraw (primitiveType: MTLPrimitiveType; vertexStart: NSUInteger; vertexCount: NSUInteger);
+procedure MTLDrawIndexed (primitiveType: MTLPrimitiveType; indexCount: NSUInteger; indexType: MTLIndexType; indexBuffer: MTLBufferProtocol; indexBufferOffset: NSUInteger);
 
 procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
 procedure MTLSetVertexBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
@@ -41,6 +47,8 @@ procedure MTLSetViewPort (constref viewport: MTLViewport);
 procedure MTLSetCullMode (mode: integer);
 
 procedure MTLSetClearColor (r, g, b, a: double);
+procedure MTLSetDepthStencil (pipeline: TMetalPipeline; newState: MTLDepthStencilStateProtocol); overload;
+procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: integer = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
 
 procedure MTLBeginFrame (pipeline: TMetalPipeline);
 procedure MTLEndFrame;
@@ -74,6 +82,15 @@ begin
 	end;
 end;
 
+procedure MTLDrawIndexed(primitiveType: MTLPrimitiveType; indexCount: NSUInteger; indexType: MTLIndexType; indexBuffer: MTLBufferProtocol; indexBufferOffset: NSUInteger);
+begin
+	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
+	with CurrentThreadPipeline do begin
+	CommitRenderPassEnconder;
+	renderEncoder.drawIndexedPrimitives_indexCount_indexType_indexBuffer_indexBufferOffset(primitiveType, indexCount, indexType, indexBuffer, indexBufferOffset);
+	end;
+end;
+
 procedure MTLDraw (primitiveType: MTLPrimitiveType; vertexStart: NSUInteger; vertexCount: NSUInteger);
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
@@ -89,6 +106,35 @@ begin
 	with CurrentThreadPipeline do begin
 	CommitRenderPassEnconder;
 	renderEncoder.setCullMode(mode);
+	end;
+end;
+
+procedure MTLSetDepthStencil (pipeline: TMetalPipeline; newState: MTLDepthStencilStateProtocol);
+begin
+	with pipeline do begin
+	depthStencilState.release;
+	depthStencilState := newState.retain;
+	end;
+end;
+
+procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: integer = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
+var
+	descriptor: MTLDepthStencilDescriptor;
+	state: MTLDepthStencilStateProtocol;
+begin
+	with pipeline do begin
+
+	descriptor := MTLDepthStencilDescriptor.alloc.init;
+	descriptor.setDepthCompareFunction(compareFunction);
+	descriptor.setDepthWriteEnabled(depthWriteEnabled);
+	descriptor.setFrontFaceStencil(frontFaceStencil);
+	descriptor.setBackFaceStencil(backFaceStencil);
+
+	state := device.newDepthStencilStateWithDescriptor(descriptor);
+	MTLSetDepthStencil(pipeline, state);
+	state.release;
+
+	descriptor.release;
 	end;
 end;
 
@@ -159,6 +205,9 @@ procedure MTLEndFrame;
 begin
 	with CurrentThreadPipeline do begin
 	Fatal(renderEncoder = nil);
+
+	if depthStencilState <> nil then
+		renderEncoder.setDepthStencilState(depthStencilState);
 
 	renderEncoder.endEncoding;
 	commandBuffer.presentDrawable(view.currentDrawable);

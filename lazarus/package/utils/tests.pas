@@ -1,8 +1,10 @@
 {$mode objfpc}
+{$fpc -vbr -Fu"/../framework" $(source)}
+{$shell lazbuild lazmetalcontrol.lpk}
 
 program Tests;
 uses
-	MetalTypes, SysUtils;
+	MetalPipeline, MetalTypes, SysUtils;
 
 function SystemTime: double;
 begin
