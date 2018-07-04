@@ -182,7 +182,7 @@ type
 		public
 			case integer of
 				0:(m:array[0..3,0..3] of TScalar);
-				1:(row: array[0..3] of TVec4);
+				1:(column: array[0..3] of TVec4);
 				2:(Right,Up,Forwards,Offset:TVec4);
 				3:(Tangent,Bitangent,Normal,Translation:TVec4);
 	end;
@@ -696,7 +696,7 @@ end;
 
 function TMat4.Ptr: pointer;
 begin
-	result := @row[0];
+	result := @column[0];
 end;
 
 class function TMat4.Identity: TMat4;
@@ -766,25 +766,25 @@ end;
 
 constructor TMat4.Scale (x, y, z: TScalar);
 begin	
-	row[0].x := x;
-	row[0].y := 0;
-	row[0].z := 0;
-	row[0].w := 0;
+	column[0].x := x;
+	column[0].y := 0;
+	column[0].z := 0;
+	column[0].w := 0;
           
-	row[1].x := 0;
-	row[1].y := y;
-	row[1].z := 0;
-	row[1].w := 0;
+	column[1].x := 0;
+	column[1].y := y;
+	column[1].z := 0;
+	column[1].w := 0;
  
-	row[2].x := 0;
-	row[2].y := 0;
-	row[2].z := z;
-	row[2].w := 0;
+	column[2].x := 0;
+	column[2].y := 0;
+	column[2].z := z;
+	column[2].w := 0;
 	        
-	row[3].x := 0;
-	row[3].y := 0;
-	row[3].z := 0;
-	row[3].w := 1;
+	column[3].x := 0;
+	column[3].y := 0;
+	column[3].z := 0;
+	column[3].w := 1;
 end;
 
 constructor TMat4.RotateX(const Angle:TScalar);
@@ -910,25 +910,42 @@ begin
  m[3,3]:=1.0;
 end;
 
+
 constructor TMat4.Perspective_Metal(fovy, aspect, near, far: TScalar);
 var
-	yScale: TScalar;
-	xScale: TScalar;
-	zRange: TScalar;
-	zScale: TScalar;
-	wzScale: TScalar;
+	yscale: TScalar;
+	xscale: TScalar;
+	q: TScalar;
 begin
-	yScale := 1 / tan(fovy * 0.5);
-	xScale := yScale / aspect;
-	zRange := far - near;
-	zScale := -(far + near) / zRange;
-	wzScale := -2 * far * near / zRange;
+	yscale := 1.0 / tan(fovY * 0.5); // 1 / tan == cot
+	xscale := yscale / aspect;
+	q := far / (far - near);
 
-	row[0] := V4(xScale, 0, 0, 0);
-	row[1] := V4(0, yScale, 0, 0);
-	row[2] := V4(0, 0, zScale, -1);
-	row[3] := V4(0, 0, wzScale, 0);
+	column[0] := V4(xscale, 0, 0, 0);
+	column[1] := V4(0, yscale, 0, 0);
+	column[2] := V4(0, 0, q, 1);
+	column[3] := V4(0, 0, q * -near, 0);
 end;
+
+//constructor TMat4.Perspective_Metal(fovy, aspect, near, far: TScalar);
+//var
+//	yScale: TScalar;
+//	xScale: TScalar;
+//	zRange: TScalar;
+//	zScale: TScalar;
+//	wzScale: TScalar;
+//begin
+//	yScale := 1 / tan(fovy * 0.5);
+//	xScale := yScale / aspect;
+//	zRange := far - near;
+//	zScale := -(far + near) / zRange;
+//	wzScale := -2 * far * near / zRange;
+
+//	column[0] := V4(xScale, 0, 0, 0);
+//	column[1] := V4(0, yScale, 0, 0);
+//	column[2] := V4(0, 0, zScale, -1);
+//	column[3] := V4(0, 0, wzScale, 0);
+//end;
 
 constructor TMat4.Perspective(const fovy,Aspect,zNear,zFar:TScalar);
 var Sine,Cotangent,ZDelta,Radians:TScalar;

@@ -118,11 +118,6 @@ begin
 	end;
 end;
 
-//type
-//  NSObject_Extras = objccategory external (NSObject)
-//    function debugDescription: NSString; message 'debugDescription';
-//  end;
-
 procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: MTLCompareFunction = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
 var
 	desc: MTLDepthStencilDescriptor;
@@ -136,7 +131,7 @@ begin
 	desc.setDepthWriteEnabled(depthWriteEnabled);
 	desc.setFrontFaceStencil(frontFaceStencil);
 	desc.setBackFaceStencil(backFaceStencil);
-	desc.setLabel(NSSTR('MY DEPTH STENCIL'));
+	desc.setLabel(NSSTR('MTLSetDepthStencil'));
 
 	// NOTE: who owns this now??
 	depthStencilState := device.newDepthStencilStateWithDescriptor(desc);
@@ -212,6 +207,8 @@ begin
 	Fatal(renderPassDescriptor = nil, 'already commited current render pass descriptor.');
 	colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
 	colorAttachment.setClearColor(MTLClearColorMake(r, g, b, a));
+	colorAttachment.setStoreAction(MTLStoreActionStore);
+	colorAttachment.setLoadAction(MTLLoadActionClear);
 	end;
 end;
 
@@ -248,7 +245,7 @@ begin
 
 	if depthStencilState <> nil then
 		renderEncoder.setDepthStencilState(depthStencilState);
-	
+
 	// TODO: pull this out
 	renderEncoder.setFrontFacingWinding(MTLWindingCounterClockwise);
 
@@ -363,6 +360,11 @@ begin
 
 			colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
 			colorAttachment.setPixelFormat(view.colorPixelFormat);
+
+	    //mtlRenderPassDescriptor.colorAttachments[0].loadAction=MTLLoadActionClear;
+	    //mtlRenderPassDescriptor.colorAttachments[0].clearColor=MTLClearColorMake(0.0, 0.0, 0.0, 1.0);
+	    //mtlRenderPassDescriptor.colorAttachments[0].storeAction=MTLStoreActionStore;
+
 
 			pipelineState := device.newRenderPipelineStateWithDescriptor_error(pipelineStateDescriptor, @error);
 

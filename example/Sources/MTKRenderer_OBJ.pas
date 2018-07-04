@@ -2,7 +2,7 @@
 {$modeswitch objectivec1}
 {$modeswitch advancedrecords}
 
-unit MTKRenderer_DepthStencil;
+unit MTKRenderer_OBJ;
 interface
 uses
 	Scanner, MeshLoader, MetalTypes, Metal, MetalKit, MetalPipeline,
@@ -189,16 +189,15 @@ begin
 	viewport.znear := 0.1;
 	viewport.zfar := 100;
 
-
 	uniforms.projectionMatrix := TMat4.Perspective(60, viewport.width / viewport.height, viewport.znear, viewport.zfar);
 	//uniforms.projectionMatrix := TMat4.Ortho(0, viewport.width, viewport.height, 0, viewport.znear, viewport.zfar);
 
-	//zs := viewport.zfar / (viewport.znear - viewport.zfar);
-	//uniforms.projectionMatrix.m[2][2] := zs;
-	//uniforms.projectionMatrix.m[3][2] := zs * viewport.znear;
+	zs := viewport.zfar / (viewport.znear - viewport.zfar);
+	uniforms.projectionMatrix.m[2][2] := zs;
+	uniforms.projectionMatrix.m[3][2] := zs * viewport.znear;
 
-	uniforms.projectionMatrix := TMat4.Perspective_Metal((2 * pi) / 5, viewport.width / viewport.height, viewport.znear, viewport.zfar);
-	uniforms.projectionMatrix.show;
+	//uniforms.projectionMatrix := TMat4.Perspective_Metal((2 * pi) / 5, view.frame.size.width / view.frame.size.height, viewport.znear, viewport.zfar);
+	//uniforms.projectionMatrix.show;
 
 	uniforms.lightPos := V4(-1, 1, 0, 0);
 end;
