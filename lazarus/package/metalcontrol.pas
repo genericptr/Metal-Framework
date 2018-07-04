@@ -134,9 +134,12 @@ begin
 	// NOTE: do we own this??
 	device := MTLCreateSystemDefaultDevice;
 	renderView := MTKView.alloc.initWithFrame_device(CGRectMake(0, 0, 0, 0), device);
+	
+	renderView.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
+	renderView.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
 
 	// device is retained by MTKView so we can release now
-	device.release;
+	//device.release;
 
 	if renderView.device = nil then
 		begin

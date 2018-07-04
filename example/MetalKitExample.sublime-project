@@ -18,6 +18,9 @@
 		},
 		{
 			"path": "/Developer/Projects/FPC/Metal-Framework/files/metalkit"
+		},
+		{
+			"path": "/Developer/Projects/FPC/Metal-Framework/lazarus/package/utils"
 		}
 	]
 }

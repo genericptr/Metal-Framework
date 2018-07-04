@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {},
+	// "settings": {
+	// 	"fpc.main": "example.pas",
+	// 	"fpc.binary": "/Sources/MetalKitExample"	
+	// }
+}

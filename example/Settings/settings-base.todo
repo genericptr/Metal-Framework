@@ -20,8 +20,9 @@ OPTIONS:
   # -Xg        Create debuginfo in a separate file and add a debuglink section to executable
   # -gw        Generate DWARFv2 debug information (same as -gw2)
 
-  -Xg
-  -Xs-
+  #-Xg
+  #-Xs-
   -vbr
   -godwarfcpp
   -gw
+  -O2

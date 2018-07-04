@@ -4,7 +4,7 @@
 unit MTKRenderer_API;
 interface
 uses
-	SIMDTypes, Metal, MetalKit, MetalUtils,
+	SIMDTypes, Metal, MetalKit, MetalPipeline,
 	CocoaAll, MacOSAll, SysUtils;
 
 type
@@ -14,7 +14,7 @@ type
 		private
 			view: MTKView;
 
-			api: TMetalAPI;
+			pipeline: TMetalPipeline;
 			viewportSize: vector_uint2;
 			viewport: MTLViewport;
 
@@ -68,17 +68,17 @@ begin
 	verticies[1] := AAPLVertex(V2(-size, -size), V4(0, 1, 0, 1 ));
 	verticies[2] := AAPLVertex(V2(0, size), V4(0, 0, 1, 1));
 
-	MTLBeginFrame(api, view);
-		MTLSetViewPort(api, viewport);
-		MTLSetVertexBytes(api, @verticies, sizeof(verticies), AAPLVertexInputIndexVertices);
-		MTLSetVertexBytes(api, @viewportSize, sizeof(viewportSize), AAPLVertexInputIndexViewportSize);
-		MTLDraw(api, MTLPrimitiveTypeTriangle, 0, 3);
-	MTLEndFrame(api);
+	MTLBeginFrame(pipeline);
+		MTLSetViewPort(viewport);
+		MTLSetVertexBytes(@verticies, sizeof(verticies), AAPLVertexInputIndexVertices);
+		MTLSetVertexBytes(@viewportSize, sizeof(viewportSize), AAPLVertexInputIndexViewportSize);
+		MTLDraw(MTLPrimitiveTypeTriangle, 0, 3);
+	MTLEndFrame;
 end;
 
 procedure TMTKRenderer.dealloc;
 begin
-	MTLFree(api);
+	MTLFree(pipeline);
 
 	inherited dealloc;
 end;
@@ -92,11 +92,13 @@ begin
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
 
+	options := TMetalPipelineOptions.Default;
+	
 	options.libraryName := ResourcePath('Color', 'metallib');
 	options.vertexFunction := 'vertexShader';
 	options.fragmentFunction := 'fragmentShader';
 
-	api := MTLCreate(view, @options);
+	pipeline := MTLCreatePipeline(view, @options);
 end;
 
 end.

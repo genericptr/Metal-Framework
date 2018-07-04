@@ -86,7 +86,7 @@ begin
 	if obj = nil then
 		writeln(msg+'nil')
 	else
-		writeln(msg+obj.description.UTF8String);
+		writeln(msg, obj.description.UTF8String);
 end;
 
 end.

@@ -6,6 +6,7 @@ function MTLRegionMake1D(x, width: NSUInteger): MTLRegion; inline;
 function MMTLRegionMake2D(x, y, width, height: NSUInteger): MTLRegion; inline;
 function MTLRegionMake3D(x, y, z, width, height, depth: NSUInteger): MTLRegion; inline;
 function MTLSamplePositionMake (x, y: single): MTLSamplePosition; inline;
+function MTLClearColorMake (r, g, b, a: double): MTLClearColor; inline;
 {$endif}
 
 {$ifdef IMPLEMENTATION}
@@ -48,5 +49,12 @@ begin
 	result.y := y;
 end;
 
+function MTLClearColorMake (r, g, b, a: double): MTLClearColor;
+begin
+	result.red := r;
+	result.green := g;
+	result.blue := b;
+	result.alpha := a;
+end;
 {$endif}
 

@@ -37,22 +37,31 @@ type
 	end;
 	TMetalPipelineOptionsPtr = ^TMetalPipelineOptions;
 
+{ Drawing }
 procedure MTLDraw (primitiveType: MTLPrimitiveType; vertexStart: NSUInteger; vertexCount: NSUInteger);
 procedure MTLDrawIndexed (primitiveType: MTLPrimitiveType; indexCount: NSUInteger; indexType: MTLIndexType; indexBuffer: MTLBufferProtocol; indexBufferOffset: NSUInteger);
 
-procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
+{ Buffers }
+procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger); overload;
+procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; index: NSUInteger); overload; inline;
 procedure MTLSetVertexBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
+
+procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
+procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
+
+{ Render Encoder }
 procedure MTLSetFragmentTexture (texture: MTLTextureProtocol; index: NSUInteger);
 procedure MTLSetViewPort (constref viewport: MTLViewport);
 procedure MTLSetCullMode (mode: integer);
 
 procedure MTLSetClearColor (r, g, b, a: double);
-procedure MTLSetDepthStencil (pipeline: TMetalPipeline; newState: MTLDepthStencilStateProtocol); overload;
-procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: integer = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
+procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: MTLCompareFunction = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
 
+{ Frames }
 procedure MTLBeginFrame (pipeline: TMetalPipeline);
 procedure MTLEndFrame;
 
+{ Creation }
 procedure MTLFree (var pipeline: TMetalPipeline);
 function MTLCreatePipeline (view: MTKView; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline;
 
@@ -109,32 +118,29 @@ begin
 	end;
 end;
 
-procedure MTLSetDepthStencil (pipeline: TMetalPipeline; newState: MTLDepthStencilStateProtocol);
-begin
-	with pipeline do begin
-	depthStencilState.release;
-	depthStencilState := newState.retain;
-	end;
-end;
+//type
+//  NSObject_Extras = objccategory external (NSObject)
+//    function debugDescription: NSString; message 'debugDescription';
+//  end;
 
-procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: integer = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
+procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: MTLCompareFunction = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
 var
-	descriptor: MTLDepthStencilDescriptor;
-	state: MTLDepthStencilStateProtocol;
+	desc: MTLDepthStencilDescriptor;
 begin
 	with pipeline do begin
 
-	descriptor := MTLDepthStencilDescriptor.alloc.init;
-	descriptor.setDepthCompareFunction(compareFunction);
-	descriptor.setDepthWriteEnabled(depthWriteEnabled);
-	descriptor.setFrontFaceStencil(frontFaceStencil);
-	descriptor.setBackFaceStencil(backFaceStencil);
+	Fatal(depthStencilState <> nil, 'depth stencil already set');
 
-	state := device.newDepthStencilStateWithDescriptor(descriptor);
-	MTLSetDepthStencil(pipeline, state);
-	state.release;
+	desc := MTLDepthStencilDescriptor.alloc.init;
+	desc.setDepthCompareFunction(compareFunction);
+	desc.setDepthWriteEnabled(depthWriteEnabled);
+	desc.setFrontFaceStencil(frontFaceStencil);
+	desc.setBackFaceStencil(backFaceStencil);
+	desc.setLabel(NSSTR('MY DEPTH STENCIL'));
 
-	descriptor.release;
+	// NOTE: who owns this now??
+	depthStencilState := device.newDepthStencilStateWithDescriptor(desc);
+	show(depthStencilState);
 	end;
 end;
 
@@ -156,6 +162,24 @@ begin
 	end;
 end;
 
+procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
+begin
+	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
+	with CurrentThreadPipeline do begin
+	CommitRenderPassEnconder;
+	renderEncoder.setFragmentBuffer_offset_atIndex(buffer, offset, index);
+	end;
+end;
+
+procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
+begin
+	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
+	with CurrentThreadPipeline do begin
+	CommitRenderPassEnconder;
+	renderEncoder.setFragmentBytes_length_atIndex(bytes, len, index);
+	end;
+end;
+
 procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
@@ -163,6 +187,11 @@ begin
 	CommitRenderPassEnconder;
 	renderEncoder.setVertexBuffer_offset_atIndex(buffer, offset, index);
 	end;
+end;
+
+procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; index: NSUInteger);
+begin
+	MTLSetVertexBuffer(buffer, 0, index);
 end;
 
 procedure MTLSetVertexBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
@@ -176,28 +205,39 @@ end;
 
 procedure MTLSetClearColor (r, g, b, a: double);
 var
-	clearColor: MTLClearColor;
 	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
 begin
 	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
 	with CurrentThreadPipeline do begin
 	Fatal(renderPassDescriptor = nil, 'already commited current render pass descriptor.');
 	colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-	clearColor.red := r;
-	clearColor.green := g;
-	clearColor.blue:= b;
-	clearColor.alpha := a;
-	colorAttachment.setClearColor(clearColor);
+	colorAttachment.setClearColor(MTLClearColorMake(r, g, b, a));
 	end;
 end;
 
 procedure MTLBeginFrame (pipeline: TMetalPipeline);
+var
+	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
 begin
 	CurrentThreadPipeline := pipeline;
 	with CurrentThreadPipeline do begin
 	commandBuffer := commandQueue.commandBuffer;
+
 	renderPassDescriptor := view.currentRenderPassDescriptor;
 	Fatal(renderPassDescriptor = nil, 'views device is not set');
+
+	//renderPassDescriptor := MTLRenderPassDescriptor.renderPassDescriptor;
+	//setDepthAttachment
+
+	// NOTE: depthAttachment is set automatically by the MTKView
+	//show(renderPassDescriptor.depthAttachment);halt;
+
+	//colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+ // colorAttachment.setTexture(view.currentDrawable.texture);
+ // colorAttachment.setClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
+ // colorAttachment.setStoreAction(MTLStoreActionStore);
+ // colorAttachment.setLoadAction(MTLLoadActionClear);
+
 	end;
 end;
 
@@ -208,6 +248,9 @@ begin
 
 	if depthStencilState <> nil then
 		renderEncoder.setDepthStencilState(depthStencilState);
+	
+	// TODO: pull this out
+	renderEncoder.setFrontFacingWinding(MTLWindingCounterClockwise);
 
 	renderEncoder.endEncoding;
 	commandBuffer.presentDrawable(view.currentDrawable);
@@ -254,7 +297,7 @@ var
 	shaderLibrary: MTLLibraryProtocol;
 	vertexFunction: MTLFunctionProtocol = nil;
 	fragmentFunction: MTLFunctionProtocol = nil;
-	attachment: MTLRenderPipelineColorAttachmentDescriptor;
+	colorAttachment: MTLRenderPipelineColorAttachmentDescriptor;
 	pipelineStateDescriptor: MTLRenderPipelineDescriptor;
 
 	error: NSError = nil;
@@ -268,6 +311,9 @@ begin
 			device := view.device;
 			Fatal(device = nil, 'no gpu device found.');
 			Show(device, 'GPU:');
+
+			// Create the command queue
+			commandQueue := device.newCommandQueue;
 
 			if options <> nil then
 				begin
@@ -308,14 +354,15 @@ begin
 
 			Fatal(fragmentFunction = nil, 'fragment shader not found.');
 
+			// TODO: for different shaders we need to make multiple pipelineState's
+			// which can be set between begin/end frame calls
 			pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init;
-			pipelineStateDescriptor.setLabel(NSSTR('Pipeline'));
 			pipelineStateDescriptor.setVertexFunction(vertexFunction);
 			pipelineStateDescriptor.setFragmentFunction(fragmentFunction);
+			pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
 
-			// pipelineStateDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat;
-			attachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-			attachment.setPixelFormat(view.colorPixelFormat);
+			colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+			colorAttachment.setPixelFormat(view.colorPixelFormat);
 
 			pipelineState := device.newRenderPipelineStateWithDescriptor_error(pipelineStateDescriptor, @error);
 
@@ -324,9 +371,6 @@ begin
 			//  went wrong.  (Metal API validation is enabled by default when a debug build is run
 			//  from Xcode)
 			Fatal(pipelineState = nil, 'pipeline creation failed.', error);
-
-			// Create the command queue
-			commandQueue := device.newCommandQueue;
 
 			// cleanup temporary state
 			pipelineStateDescriptor.release;

@@ -4,12 +4,13 @@
 unit AppDelegate;
 interface
 uses
-	MTKRenderer_HelloTriangle,
+	//MTKRenderer_HelloTriangle,
 	//MTKRenderer_BasicBuffers,
 	//MTKRenderer_BasicTexturing,
 	//MTKRenderer_API,
 	//MTKRenderer_Cube,
-	MetalKit, Metal, CocoaAll;
+	MTKRenderer_DepthStencil,
+	MetalKit, Metal, CocoaAll, MacOSAll;
 
 type
 	TAppController = objcclass(NSObject)
@@ -26,19 +27,25 @@ implementation
 procedure TAppController.applicationDidFinishLaunching(notification: NSNotification);
 begin
 	
-	// Insert code here to initialize your application 
-	renderView := window.contentView;
- 	writeln(renderView.description.utf8string);
+	renderView := MTKView.alloc.initWithFrame_device(MacOSAll.CGRect(window.contentView.bounds), MTLCreateSystemDefaultDevice);
+	//renderView.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
+	//renderView.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
 
- 	// Set the view to use the default device
- 	renderView.setDevice(MTLCreateSystemDefaultDevice);
+	renderView.setAutoresizingMask(NSViewWidthSizable + NSViewHeightSizable);
+
+	window.contentView.addSubview(renderView);
+
+	//renderView := window.contentView;
+ 	//renderView.setDevice(MTLCreateSystemDefaultDevice);
+ 	
+ 	renderView.setPreferredFramesPerSecond(60);
 
  	if renderView.device = nil then
  		begin
  			writeln('metal is not supported on this device');
  			halt;
  		end;
-
+ 		
  	renderer := TMTKRenderer.alloc.init(renderView);
 end;
 

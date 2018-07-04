@@ -8,6 +8,14 @@ type
 
 {$ifdef CLASSES}
 
+//type
+//  CALayerDelegate = objccategory external (NSObject)
+//    procedure displayLayer (layer: CALayer); message 'displayLayer:';
+//    procedure drawLayer_inContext (layer: CALayer; ctx: CGContextRef); message 'drawLayer:inContext:';
+//    procedure layoutSublayersOfLayer (layer: CALayer); message 'layoutSublayersOfLayer:';
+//    function actionForLayer_forKey (layer: CALayer; event: NSString): CAActionProtocol; message 'actionForLayer:forKey:';
+//  end;
+
 // NOTE: conforms to CALayerDelegateProtocol
 type
   MTKView = objcclass external (NSView, NSCodingProtocol)

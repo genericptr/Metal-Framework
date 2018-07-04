@@ -18,3 +18,4 @@ RESOURCE PATHS:
 SOURCE PATHS:
 
   ../files
+  ../lazarus/package/utils

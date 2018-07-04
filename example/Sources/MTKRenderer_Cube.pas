@@ -4,7 +4,7 @@
 unit MTKRenderer_Cube;
 interface
 uses
-	GLTypes, SIMDTypes, Metal, MetalKit, MetalUtils,
+	SIMDTypes, MetalTypes, Metal, MetalKit, MetalPipeline,
 	CocoaAll, MacOSAll, SysUtils, Math;
 
 // https://www.raywenderlich.com/146416/metal-tutorial-swift-3-part-2-moving-3d
@@ -17,7 +17,7 @@ type
 		private
 			view: MTKView;
 
-			api: TMetalAPI;
+			pipeline: TMetalPipeline;
 			viewport: MTLViewport;
 			uniformBuffer: MTLBufferProtocol;
 			rotation: single;
@@ -48,8 +48,8 @@ type
 
 function AAPLVertex(x, y, z: simd_float; r, g, b, a: simd_float): TAAPLVertex;
 begin
-	result.position := V3(x, y, z);
-	result.color := V4(r, g, b, a);
+	result.position := SIMDTypes.V3(x, y, z);
+	result.color := SIMDTypes.V4(r, g, b, a);
 end;
 
 procedure TMTKRenderer.mtkView_drawableSizeWillChange (fromView: MTKView; size: CGSize);
@@ -107,18 +107,18 @@ begin
 
 	BlockMove(uniformBuffer.contents, @uniforms, uniformBuffer.length);
 
-	MTLBeginFrame(api, view);
-		MTLSetViewPort(api, viewport);
-		MTLSetVertexBytes(api, pointer(verticies), sizeof(TAAPLVertex) * Length(verticies), 0);
-		MTLSetVertexBuffer(api, uniformBuffer, 0, 1);
-		MTLSetCullMode(api, MTLCullModeFront);
-		MTLDraw(api, MTLPrimitiveTypeTriangle, 0, 36);
-	MTLEndFrame(api);
+	MTLBeginFrame(pipeline);
+		MTLSetViewPort(viewport);
+		MTLSetVertexBytes(pointer(verticies), sizeof(TAAPLVertex) * Length(verticies), 0);
+		MTLSetVertexBuffer(uniformBuffer, 0, 1);
+		MTLSetCullMode(MTLCullModeFront);
+		MTLDraw(MTLPrimitiveTypeTriangle, 0, 36);
+	MTLEndFrame;
 end;
 
 procedure TMTKRenderer.dealloc;
 begin
-	MTLFree(api);
+	MTLFree(pipeline);
 
 	inherited dealloc;
 end;
@@ -132,13 +132,12 @@ begin
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
 
+	options := TMetalPipelineOptions.Default;
 	options.libraryName := ResourcePath('Transforms', 'metallib');
-	options.vertexFunction := 'vertexShader';
-	options.fragmentFunction := 'fragmentShader';
 	
 	uniformBuffer := view.device.newBufferWithLength_options(sizeof(TAAPLUniforms), MTLResourceOptionCPUCacheModeDefault);
 
-	api := MTLCreate(view, @options);
+	pipeline := MTLCreatePipeline(view, @options);
 end;
 
 end.

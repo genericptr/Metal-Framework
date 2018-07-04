@@ -5,7 +5,7 @@ unit MTKRenderer_BasicBuffers;
 interface
 uses
 	SIMDTypes, TGALoader,
-	Metal, MetalKit, MetalUtils,
+	Metal, MetalKit, MetalPipeline,
 	CocoaAll, MacOSAll, SysUtils;
 
 type
@@ -210,7 +210,7 @@ begin
 	// pipelineStateDescriptor.colorAttachments[0].pixelFormat = mtkView.colorPixelFormat;
 	attachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
 	attachment.setPixelFormat(view.colorPixelFormat);
-
+	
 	pipelineState := device.newRenderPipelineStateWithDescriptor_error(pipelineStateDescriptor, @error);
 
 	// Pipeline State creation could fail if we haven't properly set up our pipeline descriptor.

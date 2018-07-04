@@ -10,7 +10,9 @@
             "request": "launch",
             // NOTE: un-comment to build before debugging
             // "preLaunchTask": "build",
-            "program": "${workspaceFolder}/${config:fpc.binary}",
+            // Sources/TestScanner
+            // MetalKitExample.app/Contents/MacOS/MetalKitExample
+            "program": "${workspaceFolder}/MetalKitExample.app/Contents/MacOS/MetalKitExample",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
