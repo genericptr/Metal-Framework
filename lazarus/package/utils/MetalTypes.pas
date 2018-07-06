@@ -147,7 +147,6 @@ type
       constructor Rotate(constref pMatrix:TMat4); overload;
 			constructor Ortho (const Left,Right,Bottom,Top,zNear,zFar:TScalar);
 			constructor Perspective (const fovy,Aspect,zNear,zFar:TScalar);
-			constructor Perspective_Metal(fovy, aspect, near, far: TScalar);
 			constructor LookAt (constref Eye,Center,Up:TVec3);
 			
 			function Inverse:TMat4; inline;
@@ -909,43 +908,6 @@ begin
  m[3,2]:=(-(zFar+zNear))/fmn;
  m[3,3]:=1.0;
 end;
-
-
-constructor TMat4.Perspective_Metal(fovy, aspect, near, far: TScalar);
-var
-	yscale: TScalar;
-	xscale: TScalar;
-	q: TScalar;
-begin
-	yscale := 1.0 / tan(fovY * 0.5); // 1 / tan == cot
-	xscale := yscale / aspect;
-	q := far / (far - near);
-
-	column[0] := V4(xscale, 0, 0, 0);
-	column[1] := V4(0, yscale, 0, 0);
-	column[2] := V4(0, 0, q, 1);
-	column[3] := V4(0, 0, q * -near, 0);
-end;
-
-//constructor TMat4.Perspective_Metal(fovy, aspect, near, far: TScalar);
-//var
-//	yScale: TScalar;
-//	xScale: TScalar;
-//	zRange: TScalar;
-//	zScale: TScalar;
-//	wzScale: TScalar;
-//begin
-//	yScale := 1 / tan(fovy * 0.5);
-//	xScale := yScale / aspect;
-//	zRange := far - near;
-//	zScale := -(far + near) / zRange;
-//	wzScale := -2 * far * near / zRange;
-
-//	column[0] := V4(xScale, 0, 0, 0);
-//	column[1] := V4(0, yScale, 0, 0);
-//	column[2] := V4(0, 0, zScale, -1);
-//	column[3] := V4(0, 0, wzScale, 0);
-//end;
 
 constructor TMat4.Perspective(const fovy,Aspect,zNear,zFar:TScalar);
 var Sine,Cotangent,ZDelta,Radians:TScalar;

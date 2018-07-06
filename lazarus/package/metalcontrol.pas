@@ -135,6 +135,7 @@ begin
 	device := MTLCreateSystemDefaultDevice;
 	renderView := MTKView.alloc.initWithFrame_device(CGRectMake(0, 0, 0, 0), device);
 	
+	// set default pixel formats
 	renderView.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
 	renderView.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
 

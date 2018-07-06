@@ -46,12 +46,12 @@ uses
 
 type
 	TFPGFloatList = specialize TFPGList<single>;
-	TFPGIntegerList = specialize TFPGList<UInt16>;
+	TFPGUInt16List = specialize TFPGList<UInt16>;
 	THeaderMesh = record
 		vertices: TFPGFloatList;
 		normals: TFPGFloatList;
 		uvs: TFPGFloatList;
-		indices: TFPGIntegerList;
+		indices: TFPGUInt16List;
 
 		vertexBuffer: MTLBufferProtocol;
 		normalBuffer: MTLBufferProtocol;
@@ -77,7 +77,7 @@ type
 procedure TVertexFileScanner.Parse;
 var
 	floatList: TFPGFloatList;
-	intList: TFPGIntegerList;
+	intList: TFPGUInt16List;
 	name: string;
 begin
 	while true do
@@ -161,13 +161,17 @@ begin
 	vertices := TFPGFloatList.Create;
 	normals := TFPGFloatList.Create;
 	uvs := TFPGFloatList.Create;
-	indices := TFPGIntegerList.Create;
+	indices := TFPGUInt16List.Create;
 
 	scanner := TVertexFileScanner.Create;
 	scanner.mesh := self;
 	scanner.LoadFile(dataFile);
 	scanner.Parse;
 	scanner.Free;
+
+	writeln('vertices: ', vertices.count);
+	writeln('normals: ', normals.count);
+	writeln('indices: ', indices.count);
 
 	vertexBuffer := device.newBufferWithBytes_length_options(vertices.list, vertices.count * sizeof(TScalar), MTLResourceOptionCPUCacheModeDefault);
 	normalBuffer := device.newBufferWithBytes_length_options(normals.list, normals.count * sizeof(TScalar), MTLResourceOptionCPUCacheModeDefault);
@@ -178,9 +182,45 @@ end;
 {@! ___RENDERER___ } 
 {=============================================}
 
-procedure TMTKRenderer.mtkView_drawableSizeWillChange (fromView: MTKView; size: CGSize);
+// GettingStartedMetal - matrix_from_perspective_fov_aspectLH
+function Perspective_Metal(fovy, aspect, near, far: TScalar): TMat4;
 var
-	zs: TScalar;
+	yscale: TScalar;
+	xscale: TScalar;
+	q: TScalar;
+begin
+	yscale := 1.0 / tan(fovy * 0.5); // 1 / tan == cot
+	xscale := yscale / aspect;
+	q := far / (far - near);
+
+	result.column[0] := V4(xscale, 0, 0, 0);
+	result.column[1] := V4(0, yscale, 0, 0);
+	result.column[2] := V4(0, 0, q, 1);
+	result.column[3] := V4(0, 0, q * -near, 0);
+end;
+
+// Lighting - MBEMathUtilities.mm
+function Perspective_Metal_2(fovy, aspect, near, far: TScalar): TMat4;
+var
+	yScale: TScalar;
+	xScale: TScalar;
+	zRange: TScalar;
+	zScale: TScalar;
+	wzScale: TScalar;
+begin
+	yScale := 1 / tan(fovy * 0.5);
+	xScale := yScale / aspect;
+	zRange := far - near;
+	zScale := -(far + near) / zRange;
+	wzScale := -2 * far * near / zRange;
+
+	result.column[0] := V4(xScale, 0, 0, 0);
+	result.column[1] := V4(0, yScale, 0, 0);
+	result.column[2] := V4(0, 0, zScale, -1);
+	result.column[3] := V4(0, 0, wzScale, 0);
+end;
+
+procedure TMTKRenderer.mtkView_drawableSizeWillChange (fromView: MTKView; size: CGSize);
 begin
 	viewport.originX := 0;
 	viewport.originY := 0;
@@ -189,16 +229,7 @@ begin
 	viewport.znear := 0.1;
 	viewport.zfar := 100;
 
-
 	uniforms.projectionMatrix := TMat4.Perspective(60, viewport.width / viewport.height, viewport.znear, viewport.zfar);
-	//uniforms.projectionMatrix := TMat4.Ortho(0, viewport.width, viewport.height, 0, viewport.znear, viewport.zfar);
-
-	//zs := viewport.zfar / (viewport.znear - viewport.zfar);
-	//uniforms.projectionMatrix.m[2][2] := zs;
-	//uniforms.projectionMatrix.m[3][2] := zs * viewport.znear;
-
-	uniforms.projectionMatrix := TMat4.Perspective_Metal((2 * pi) / 5, viewport.width / viewport.height, viewport.znear, viewport.zfar);
-	uniforms.projectionMatrix.show;
 
 	uniforms.lightPos := V4(-1, 1, 0, 0);
 end;
@@ -209,30 +240,27 @@ var
 	scale: single;
 	v: TVec3;
 begin
-	scale := 0.45;
+	scale := 0.55;
 
 	// TODO: slamming all uniforms into a single struct we need
 	// to copy each frame is a really stupid idea
 	uniforms.modelMatrix := TMat4.Identity;
-	uniforms.modelMatrix *= TMat4.Translate(0, 0, -4);
+	uniforms.modelMatrix *= TMat4.Translate(0, 0, -4); // adjust z for wrong clip space in proj matrix
 	uniforms.modelMatrix *= TMat4.RotateY(DegToRad(rotation));
 	uniforms.modelMatrix *= TMat4.Scale(scale, scale, scale);
 	rotation += 0.2;
 
 	uniforms.invertedModelMatrix := uniforms.modelMatrix.Inverse.Transpose;
 
-	//v := uniforms.projectionMatrix * uniforms.modelMatrix * V3(SmallHouseMesh.vertices[0], SmallHouseMesh.vertices[1], SmallHouseMesh.vertices[2]);
-	//v.show;
-	//halt;
-
 	BlockMove(uniformBuffer.contents, @uniforms, uniformBuffer.length);
 
 	MTLBeginFrame(pipeline);
-		MTLSetViewPort(viewport);
+		//MTLSetViewPort(viewport);
 		MTLSetVertexBuffer(SmallHouseMesh.vertexBuffer, 0);
 		MTLSetVertexBuffer(SmallHouseMesh.normalBuffer, 1);
 		MTLSetVertexBuffer(uniformBuffer, 2);
 		MTLSetCullMode(MTLCullModeFront);
+		MTLSetFrontFacingWinding(MTLWindingClockwise);
 		MTLDrawIndexed(MTLPrimitiveTypeTriangle, SmallHouseMesh.indices.count, MTLIndexTypeUInt16, SmallHouseMesh.indexBuffer, 0);
 	MTLEndFrame;
 end;
@@ -249,30 +277,23 @@ function TMTKRenderer.init (inView: MTKView): TMTKRenderer;
 var
 	error: NSError;
 	options: TMetalPipelineOptions;
-	scanner: TVertexFileScanner;
-	potMesh: TMesh;
 begin
 	view := inView;
 
-	view.setClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
-	view.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
-	view.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
+	//view.setClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
+	//view.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
+	//view.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
 
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
  	
-	//potMesh := LoadOBJModel(ResourcePath('teapot', 'obj'));
-	//writeln('verts: ', potMesh.vertices.count);
-	//writeln('index: ', potMesh.indices.count);
-
-	//halt;
-
-	SmallHouseMesh.Load(view.device, '/Developer/Projects/FPC/Metal-Framework/example/Sources/smallhouse.h');
+	SmallHouseMesh.Load(view.device, ResourcePath('smallhouse', 'h'));
 
 	options := TMetalPipelineOptions.Default;
 	options.libraryName := ResourcePath('SmallHouse', 'metallib');
 	pipeline := MTLCreatePipeline(view, @options);
 
+	MTLSetClearColor(pipeline, MTLClearColorMake(0.2, 0.2, 0.2, 1));
 	MTLSetDepthStencil(pipeline, MTLCompareFunctionLess, true);
 
 	uniformBuffer := view.device.newBufferWithLength_options(sizeof(TWorldUniforms), MTLResourceOptionCPUCacheModeDefault);

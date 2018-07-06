@@ -126,6 +126,7 @@ blitEncoder.endEncoding()
             let cgprovider = 
 *)
 
+(*
 procedure SaveImage(view: MTKView; path: pchar);
 var
   texture: MTLTextureProtocol;
@@ -193,6 +194,7 @@ begin
 	//CGColorSpaceRelease(colorSpace);
 	//FreeMem(bytes);
 end;
+*)
 
 procedure TMTKRenderer.drawTriangle;
 var

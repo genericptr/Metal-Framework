@@ -7,52 +7,27 @@ interface
 uses
 	MetalTypes, SysUtils, FGL, Classes;
 
-// NOTE: i think these offset are needed because
-// we didn't set the vertex attributes MTLVertexAttribute
+{macro on}
+{define padding(i,n):=padding_#i: array[0..#n-1] of TScalar}
 
-(*
-
-- (MTLVertexDescriptor )newVertexDescriptor
-{
-    MTLVertexDescriptor *descriptor = [MTLVertexDescriptor vertexDescriptor];
-    
-    descriptor.attributes[0].format = MTLVertexFormatFloat4;
-    descriptor.attributes[0].offset = 0;
-    descriptor.attributes[0].bufferIndex = 0;
-
-    descriptor.attributes[1].format = MTLVertexFormatFloat2;
-    descriptor.attributes[1].offset = offsetof(MBEVertex, texCoords);
-    descriptor.attributes[1].bufferIndex = 0;
-
-    descriptor.layouts[0].stride = sizeof(MBEVertex);
-
-    return descriptor;
-}
-
-    MTLRenderPipelineDescriptor *pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-    [pipelineDescriptor reset];
-    pipelineDescriptor.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
-    pipelineDescriptor.vertexFunction = vertexFunction;
-    pipelineDescriptor.fragmentFunction = fragmentFunction;
-    pipelineDescriptor.vertexDescriptor = [self newVertexDescriptor];
-
-
-*)
-
+// TODO: kill this for byte buffer so we can build fields
+// and add padding for aligning manually
 type
 	TMeshVertex = record
-		position: TVec3; 	//padding_0: array[0..0] of TScalar;
-		color: TVec3;			//padding_1: array[0..0] of TScalar;
-		texCoord: TVec2; 	//padding_2: array[0..1] of TScalar;
-		normal: TVec3; 		//padding_3: array[0..0] of TScalar;
-		tangent: TVec3; 	//padding_4: array[0..0] of TScalar;
+		position: TVec3; 	padding_0: array[0..0] of TScalar;
+		color: TVec3;			padding_1: array[0..0] of TScalar;
+		texCoord: TVec2; 	padding_2: array[0..1] of TScalar;
+		normal: TVec3; 		padding_3: array[0..0] of TScalar;
+		//tangent: TVec3; 	padding_4: array[0..0] of TScalar;
 
+		procedure Show;
 		class operator = (constref left: TMeshVertex; constref right: TMeshVertex): boolean;
 	end;
 	TMeshVertexList = specialize TFPGList<TMeshVertex>;
 
 type 
 	TIntegerList = specialize TFPGList<integer>;
+	TUInt16List = specialize TFPGList<uint16>;
 	TVec3List = specialize TFPGList<TVec3>;
 	TVec2List = specialize TFPGList<TVec2>;
 
@@ -65,8 +40,9 @@ type
 			constructor Create;
 			destructor Destroy; override;
 	end;
+	TMeshClass = class of TMesh;
 
-function LoadOBJModel (path: string; normalMap: boolean = false): TMesh; 
+function LoadOBJModel (path: string; meshClass: TMeshClass = nil; normalMap: boolean = false): TMesh; 
 
 implementation
 
@@ -107,6 +83,16 @@ begin
 	inherited;
 end;
 
+procedure TMeshVertex.Show;
+begin
+	writeln('[');
+	writeln('position: ', position.str);
+	writeln('color: ', color.str);
+	writeln('texCoord: ', texCoord.str);
+	writeln('normal: ', normal.str);
+	//writeln('tangent: ', tangent.str);
+	writeln(']');
+end;
 
 class operator TMeshVertex.= (constref left: TMeshVertex; constref right: TMeshVertex): boolean;
 begin
@@ -164,7 +150,7 @@ begin
 	result := (textureIndexOther = textureIndex) and (normalIndexOther = normalIndex);
 end;
 
-function LoadOBJModel (path: string; normalMap: boolean = false): TMesh; 
+function LoadOBJModel (path: string; meshClass: TMeshClass = nil; normalMap: boolean = false): TMesh; 
 
 function DealWithAlreadyProcessedVertex (previousVertex: TOBJVertex; newTextureIndex, newNormalIndex: integer; indices: TIntegerList; vertices: TOBJVertexList): TOBJVertex;
 var
@@ -243,7 +229,11 @@ begin
 		result := DealWithAlreadyProcessedVertex(currentVertex, textureIndex, normalIndex, indices, vertices);
 end;
 
-// TODO: dynamic array??
+type
+	TFreePool = specialize TFPGObjectList<TObject>;
+var
+	freePool: TFreePool = nil;
+
 function Split (str: string; delimiter: char): TStringList;
 var
 	i: integer;
@@ -251,7 +241,9 @@ var
 	part: string = '';
 	parts: TStringList;
 begin
-	parts := TStringList.Create; 
+	parts := TStringList.Create;	
+	freePool.Add(parts);
+
 	for i := 1 to Length(str) do
 		begin
 			c := str[i];
@@ -301,7 +293,12 @@ var
 	v0, v1, v2: TOBJVertex;
 begin	
 
-	mesh := TMesh.Create;
+	if meshClass = nil then
+		mesh := TMesh.Create
+	else
+	 mesh := meshClass.Create;
+
+	FreePool := TFreePool.Create;
 	vertices := TOBJVertexList.Create;
 	textures := TVec2List.Create;
 	normals := TVec3List.Create;
@@ -358,17 +355,19 @@ begin
 	for objVertex in vertices do
 	if objVertex.IsSet then
 		begin
+
+			// TODO: push bytes based on attributes choosen
+			// make class of TMeshLoader so we can specify these
+			// ditch the verts array and use a block of moem
+
 			meshVertex := Default(TMeshVertex);
 			meshVertex.position := objVertex.position;
 			if textures.Count > 0 then
 				meshVertex.texCoord := textures[objVertex.textureIndex];
 			if normals.Count > 0 then
 				meshVertex.normal := normals[objVertex.normalIndex];
-			meshVertex.tangent := objVertex.averagedTangent;
+			//meshVertex.tangent := objVertex.averagedTangent;
 			mesh.vertices.Add(meshVertex);	
-			
-			//if normalMap then
-			//	mesh.AddVertexAttribute(meshVertex.tan);
 		end;
 	
 	for i in indices do
@@ -380,7 +379,8 @@ begin
 	normals.Free;
 	indices.Free;
 	lines.Free;
-	
+	freePool.Free;
+
 	result := mesh;
 end;
 

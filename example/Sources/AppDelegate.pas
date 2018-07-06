@@ -9,7 +9,8 @@ uses
 	//MTKRenderer_BasicTexturing,
 	//MTKRenderer_API,
 	//MTKRenderer_Cube,
-	MTKRenderer_DepthStencil,
+	//MTKRenderer_DepthStencil,
+	MTKRenderer_OBJ,
 	MetalKit, Metal, CocoaAll, MacOSAll;
 
 type
@@ -26,17 +27,10 @@ implementation
 
 procedure TAppController.applicationDidFinishLaunching(notification: NSNotification);
 begin
-	
 	renderView := MTKView.alloc.initWithFrame_device(MacOSAll.CGRect(window.contentView.bounds), MTLCreateSystemDefaultDevice);
-	//renderView.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
-	//renderView.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
-
 	renderView.setAutoresizingMask(NSViewWidthSizable + NSViewHeightSizable);
 
 	window.contentView.addSubview(renderView);
-
-	//renderView := window.contentView;
- 	//renderView.setDevice(MTLCreateSystemDefaultDevice);
  	
  	renderView.setPreferredFramesPerSecond(60);
 
