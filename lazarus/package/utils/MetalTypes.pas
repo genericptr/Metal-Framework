@@ -145,7 +145,8 @@ type
       constructor RotateZ(const Angle:TScalar);
       constructor Rotate(const Angle:TScalar;const Axis:TVec3); overload;
       constructor Rotate(constref pMatrix:TMat4); overload;
-			constructor Ortho (const Left,Right,Bottom,Top,zNear,zFar:TScalar);
+			constructor Ortho(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
+			constructor OrthoGL(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
 			constructor Perspective (const fovy,Aspect,zNear,zFar:TScalar);
 			constructor LookAt (constref Eye,Center,Up:TVec3);
 			
@@ -885,7 +886,7 @@ begin
  m[3,3]:=1.0;
 end;
 
-constructor TMat4.Ortho(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
+constructor TMat4.OrthoGL(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
 var rml,tmb,fmn:TScalar;
 begin
  rml:=Right-Left;
@@ -909,6 +910,32 @@ begin
  m[3,3]:=1.0;
 end;
 
+constructor TMat4.Ortho(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
+var
+  sLength,sHeight, sDepth: TScalar;
+begin
+  sLength := 1.0 / (Right - left);
+  sHeight := 1.0 / (Top   - bottom);
+  sDepth  := 1.0 / (zFar   - zNear);
+  m[0,0] := 2.0 * sLength;
+  m[0,1] := 0.0;
+  m[0,2] := 0.0;
+  m[0,3] := 0.0;
+  m[1,0] := 0.0;
+  m[1,1] := 2.0 * sHeight;
+  m[1,2] := 0.0;
+  m[1,3] := 0.0;
+  m[2,0] := 0.0;
+  m[2,1] := 0.0;
+  m[2,2] := sDepth;
+  m[2,3] := 0.0;
+  m[3,0] := 0.0;
+  m[3,1] := 0.0;
+  m[3,2] := -zNear  * sDepth;;
+  m[3,3] := 1.0;
+end;
+
+// NOTE: wrong clip space for metal!
 constructor TMat4.Perspective(const fovy,Aspect,zNear,zFar:TScalar);
 var Sine,Cotangent,ZDelta,Radians:TScalar;
 begin

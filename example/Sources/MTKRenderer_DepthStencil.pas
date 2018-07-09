@@ -27,6 +27,7 @@ type
 		private
 			view: MTKView;
 
+			context: TMetalContext;
 			pipeline: TMetalPipeline;
 			viewport: MTLViewport;
 			uniformBuffer: MTLBufferProtocol;
@@ -267,8 +268,9 @@ end;
 
 procedure TMTKRenderer.dealloc;
 begin
-	MTLFree(pipeline);
+	pipeline.Free;
 	SmallHouseMesh.Free;
+	context.Free;
 
 	inherited dealloc;
 end;
@@ -279,21 +281,19 @@ var
 	options: TMetalPipelineOptions;
 begin
 	view := inView;
-
-	//view.setClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
-	//view.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
-	//view.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
-
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
  	
+	context := MTLCreateContext(view);
+	MTLMakeContextCurrent(context);
+
 	SmallHouseMesh.Load(view.device, ResourcePath('smallhouse', 'h'));
 
 	options := TMetalPipelineOptions.Default;
 	options.libraryName := ResourcePath('SmallHouse', 'metallib');
-	pipeline := MTLCreatePipeline(view, @options);
+	pipeline := MTLCreatePipeline(options);
 
-	MTLSetClearColor(pipeline, MTLClearColorMake(0.2, 0.2, 0.2, 1));
+	MTLSetClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
 	MTLSetDepthStencil(pipeline, MTLCompareFunctionLess, true);
 
 	uniformBuffer := view.device.newBufferWithLength_options(sizeof(TWorldUniforms), MTLResourceOptionCPUCacheModeDefault);

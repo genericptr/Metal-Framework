@@ -10,7 +10,8 @@ uses
 	//MTKRenderer_API,
 	//MTKRenderer_Cube,
 	//MTKRenderer_DepthStencil,
-	MTKRenderer_OBJ,
+	//MTKRenderer_OBJ,
+	MTKRenderer_Blending,
 	MetalKit, Metal, CocoaAll, MacOSAll;
 
 type

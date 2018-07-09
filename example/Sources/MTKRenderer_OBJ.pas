@@ -36,6 +36,7 @@ type
 		private
 			view: MTKView;
 
+			context: TMetalContext;
 			pipeline: TMetalPipeline;
 			viewport: MTLViewport;
 			uniformBuffer: MTLBufferProtocol;
@@ -103,31 +104,6 @@ end;
 {=============================================}
 {@! ___RENDERER___ } 
 {=============================================}
-function Mat4Ortho (Left,Right,Bottom,Top,Near,Far:TScalar): TMat4;
-//https://stackoverflow.com/questions/36295339/metal-nothing-is-rendered-when-using-orthographic-projection-matrix#40856855
-var
-  sLength,sHeight, sDepth: single;
-begin
-  sLength := 1.0 / (Right - left);
-  sHeight := 1.0 / (Top   - bottom);
-  sDepth  := 1.0 / (Far   - Near);
-  result[0,0] := 2.0 * sLength;
-  result[0,1] := 0.0;
-  result[0,2] := 0.0;
-  result[0,3] := 0.0;
-  result[1,0] := 0.0;
-  result[1,1] := 2.0 * sHeight;
-  result[1,2] := 0.0;
-  result[1,3] := 0.0;
-  result[2,0] := 0.0;
-  result[2,1] := 0.0;
-  result[2,2] := sDepth;
-  result[2,3] := 0.0;
-  result[3,0] := 0.0;
-  result[3,1] := 0.0;
-  result[3,2] := -near  * sDepth;;
-  result[3,3] := 1.0;
-end;
 
 function Perspective_Metal(fovy, aspect, near, far: TScalar): TMat4;
 var
@@ -214,7 +190,6 @@ begin
 	BlockMove(uniformBuffer.contents, @uniforms, uniformBuffer.length);
 
 	MTLBeginFrame(pipeline);
-		//MTLSetViewPort(viewport);
 		MTLSetVertexBuffer(teapotMesh.vertexBuffer, 0);
 		MTLSetVertexBuffer(uniformBuffer, 1);
 		MTLSetCullMode(MTLCullModeBack);
@@ -225,7 +200,7 @@ end;
 
 procedure TMTKRenderer.dealloc;
 begin
-	MTLFree(pipeline);
+	pipeline.Free;
 	teapotMesh.Free;
 
 	inherited dealloc;
@@ -240,7 +215,10 @@ begin
 	view := inView;
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
- 	
+
+	context := MTLCreateContext(view);
+	MTLMakeContextCurrent(context);
+
 	teapotMesh := LoadOBJModel(ResourcePath('teapot', 'obj'), TMetalMesh) as TMetalMesh;
 
 	with teapotMesh do
@@ -255,10 +233,10 @@ begin
 	options.libraryName := ResourcePath('Teapot_Packed', 'metallib');
 	// NOTE: why don't we need this??
 	//options.vertexDescriptor := teapotMesh.GetVertexDescriptor;
-	pipeline := MTLCreatePipeline(view, @options);
+	pipeline := MTLCreatePipeline(options);
 
 	MTLSetDepthStencil(pipeline, MTLCompareFunctionLess, true);
-	MTLSetClearColor(pipeline, MTLClearColorMake(0.2, 0.2, 0.2, 1));
+	MTLSetClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
 
 	uniformBuffer := view.device.newBufferWithLength_options(sizeof(TWorldUniforms), MTLResourceOptionCPUCacheModeDefault);
 end;

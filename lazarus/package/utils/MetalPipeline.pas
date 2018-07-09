@@ -9,34 +9,67 @@ uses
 
 type
 	TMetalPipeline = class
-		view: MTKView;
-		device: MTLDeviceProtocol;
 		pipelineState: MTLRenderPipelineStateProtocol;
 
-		// available between begin/end frame
+		// states
+		depthStencilState: MTLDepthStencilStateProtocol;
+
+		destructor Destroy; override;
+	end;
+
+type
+	TMetalContext = class
+		view: MTKView;
+		device: MTLDeviceProtocol;
 		commandQueue: MTLCommandQueueProtocol;
+		currentPipeline: TMetalPipeline;
+
+		// drawing
 		commandBuffer: MTLCommandBufferProtocol;
 		renderEncoder: MTLRenderCommandEncoderProtocol;
-
-		// renderPassDescriptor can only be accessed directly after MTLBeginFrame
-		// and will be unlinked after subsequent calls to MTLSetXXX
-		//renderPassDescriptor: MTLRenderPassDescriptor;
-
-		depthStencilState: MTLDepthStencilStateProtocol;
 		drawing: boolean;
+
+		destructor Destroy; override;
+	end;
+
+type
+	TMetalLibrary = class
+		lib: MTLLibraryProtocol;
+		functions: NSMutableDictionary;
+
+		function GetFunction (name: string): MTLFunctionProtocol;
+		destructor Destroy; override;
+	end;
+
+type
+	TMetalLibraryOptions = record
+		libraryName: string;			// path to compiled .metallib file
+		shaderName: string;				// path to .metal shader file which will be compiled at runtime
+		class function Default: TMetalLibraryOptions; static;
 	end;
 
 type
 	TMetalPipelineOptions = record
-		libraryName: string;			// path to compiled .metallib file
-		shaderName: string;				// path to .metal shader file which will be compiled at runtime
-		vertexFunction: string;		// name of vertex function in shader file (see TMetalPipelineOptions.Default)
-		fragmentFunction: string;	// name of fragment function in shader file (see TMetalPipelineOptions.Default)
+
+		libraryName: string;					// path to compiled .metallib file
+		shaderName: string;						// path to .metal shader file which will be compiled at runtime
+		shaderLibrary: TMetalLibrary;	// metal library to locate shader functions
+
+		vertexShader: string;				// name of vertex function in shader file (see TMetalPipelineOptions.Default)
+		fragmentShader: string;			// name of fragment function in shader file (see TMetalPipelineOptions.Default)
 		vertexDescriptor: MTLVertexDescriptor;
+
+		// blending modes
+		blendingEnabled: boolean;
+		sourceRGBBlendFactor: MTLBlendFactor;
+		destinationRGBBlendFactor: MTLBlendFactor;
+		rgbBlendOperation: MTLBlendOperation;
+		sourceAlphaBlendFactor: MTLBlendFactor;
+		destinationAlphaBlendFactor: MTLBlendFactor;
+		alphaBlendOperation: MTLBlendOperation;
 
 		class function Default: TMetalPipelineOptions; static;
 	end;
-	TMetalPipelineOptionsPtr = ^TMetalPipelineOptions;
 
 { Drawing }
 procedure MTLDraw (primitiveType: MTLPrimitiveType; vertexStart: NSUInteger; vertexCount: NSUInteger);
@@ -50,137 +83,216 @@ procedure MTLSetVertexBytes (bytes: pointer; len: NSUInteger; index: NSUInteger)
 procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
 procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 
+{ Textures }
+function MTLLoadTexture (bytes: pointer; width, height: integer; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm): MTLTextureProtocol;
+
 { Render Encoder }
+procedure MTLSetShader(pipeline: TMetalPipeline);
+
 procedure MTLSetFragmentTexture (texture: MTLTextureProtocol; index: NSUInteger);
 procedure MTLSetViewPort (constref viewport: MTLViewport);
 procedure MTLSetCullMode (mode: MTLCullMode);
 procedure MTLSetFrontFacingWinding (winding: MTLWinding);
 
-{ Persistent States }
-procedure MTLSetClearColor (pipeline: TMetalPipeline; clearColor: MTLClearColor; colorPixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; depthStencilPixelFormat: MTLPixelFormat = MTLPixelFormatDepth32Float);
+{ Context }
+procedure MTLSetClearColor (clearColor: MTLClearColor; colorPixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; depthStencilPixelFormat: MTLPixelFormat = MTLPixelFormatDepth32Float);
 procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: MTLCompareFunction = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
 
 { Frames }
-procedure MTLBeginFrame (pipeline: TMetalPipeline);
+procedure MTLBeginFrame (pipeline: TMetalPipeline = nil);
 procedure MTLEndFrame;
 
 { Creation }
-procedure MTLFree (var pipeline: TMetalPipeline);
-function MTLCreatePipeline (view: MTKView; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline;
+
+function MTLCreateContext (view: MTKView): TMetalContext;
+function MTLCreateLibrary (options: TMetalLibraryOptions): TMetalLibrary;
+function MTLCreatePipeline (options: TMetalPipelineOptions): TMetalPipeline;
+
+procedure MTLMakeContextCurrent (context: TMetalContext);
 
 implementation
 
+const
+	kError_InvalidContext = 'no current context';
+	kError_UnopenedFrame = 'must call MTLBeginFrame first';
+	kError_NoShader = 'no shader for current frame';
+
 threadvar
-	CurrentThreadPipeline: TMetalPipeline;
+	CurrentThreadContext: TMetalContext;
+	SharedShaderLibrary: TMetalLibrary;
+
+function NSSTR(str: string): NSString; overload;
+begin
+	result := NSString.stringWithCString_length(@str[1], length(str));
+end;
+
+class function TMetalLibraryOptions.Default: TMetalLibraryOptions;
+begin
+	result.libraryName := '';
+	result.shaderName := '';
+end;
 
 class function TMetalPipelineOptions.Default: TMetalPipelineOptions;
 begin
 	result.libraryName := '';
 	result.shaderName := '';
-	result.vertexFunction := 'vertexShader';
-	result.fragmentFunction := 'fragmentShader';
+	result.vertexShader := 'vertexShader';
+	result.fragmentShader := 'fragmentShader';
 	result.vertexDescriptor := nil;
+	result.shaderLibrary := nil;
+
+	result.blendingEnabled := false;
+	result.sourceRGBBlendFactor := MTLBlendFactorZero;
+	result.destinationRGBBlendFactor := MTLBlendFactorZero;
+	result.rgbBlendOperation := MTLBlendOperationAdd;
+	result.sourceAlphaBlendFactor := MTLBlendFactorZero;
+	result.destinationAlphaBlendFactor := MTLBlendFactorZero;
+	result.alphaBlendOperation := MTLBlendOperationAdd;
+end;
+
+destructor TMetalContext.Destroy;
+begin
+	commandQueue.release;
+
+	inherited;
+end;
+
+function TMetalLibrary.GetFunction (name: string): MTLFunctionProtocol;
+var
+	func: MTLFunctionProtocol;
+begin
+	if functions = nil then
+		functions := NSMutableDictionary.alloc.init;
+
+	func := functions.objectForKey(NSSTR(name));
+	if func = nil then
+		begin
+			func := lib.newFunctionWithName(NSSTR(name));
+			if func <> nil then
+				begin
+					functions.setObject_forKey(func, NSSTR(name));
+					func.release;
+				end;
+		end;
+
+	result := func;
+end;
+
+destructor TMetalLibrary.Destroy;
+begin
+	lib.release;
+	functions.release;
+
+	inherited;
+end;
+
+destructor TMetalPipeline.Destroy;
+begin
+	pipelineState.release;
+	depthStencilState.release;
+
+	inherited;
+end;
+
+procedure FinalizeDrawing (pipeline: TMetalPipeline);
+var
+	renderEncoder: MTLRenderCommandEncoderProtocol;
+begin
+	Fatal(CurrentThreadContext.currentPipeline = nil, kError_NoShader);
+
+	renderEncoder := CurrentThreadContext.renderEncoder;
+
+	// set pipeline state
+	renderEncoder.setRenderPipelineState(pipeline.pipelineState);
+
+	// set depth stencil if available
+	if pipeline.depthStencilState <> nil then
+		renderEncoder.setDepthStencilState(pipeline.depthStencilState);
+end;
+
+procedure ValidateRenderFrame;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	Fatal(not CurrentThreadContext.drawing, kError_UnopenedFrame);
+end;
+
+procedure MTLSetShader(pipeline: TMetalPipeline);
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	Fatal(not CurrentThreadContext.drawing, kError_UnopenedFrame);
+	CurrentThreadContext.currentPipeline := pipeline;
 end;
 
 procedure MTLDrawIndexed(primitiveType: MTLPrimitiveType; indexCount: NSUInteger; indexType: MTLIndexType; indexBuffer: MTLBufferProtocol; indexBufferOffset: NSUInteger);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
+	FinalizeDrawing(currentPipeline);
 	renderEncoder.drawIndexedPrimitives_indexCount_indexType_indexBuffer_indexBufferOffset(primitiveType, indexCount, indexType, indexBuffer, indexBufferOffset);
 	end;
 end;
 
 procedure MTLDraw (primitiveType: MTLPrimitiveType; vertexStart: NSUInteger; vertexCount: NSUInteger);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
+	FinalizeDrawing(currentPipeline);
 	renderEncoder.drawPrimitives_vertexStart_vertexCount(primitiveType, vertexStart, vertexCount);
 	end;
 end;
 
 procedure MTLSetCullMode (mode: MTLCullMode);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setCullMode(mode);
 	end;
 end;
 
 procedure MTLSetFrontFacingWinding (winding: MTLWinding);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setFrontFacingWinding(winding);
-	end;
-end;
-
-procedure MTLSetClearColor (pipeline: TMetalPipeline; clearColor: MTLClearColor; colorPixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; depthStencilPixelFormat: MTLPixelFormat = MTLPixelFormatDepth32Float);
-begin
-	with pipeline do begin
-	Fatal(drawing, 'can''t call during drawing operations');
-	view.setClearColor(clearColor);
-	view.setColorPixelFormat(colorPixelFormat);
-	view.setDepthStencilPixelFormat(depthStencilPixelFormat);
-	end;
-end;
-
-procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: MTLCompareFunction = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
-var
-	desc: MTLDepthStencilDescriptor;
-begin
-	with pipeline do begin
-
-	Fatal(drawing, 'can''t call during drawing operations');
-	Fatal(depthStencilState <> nil, 'depth stencil already set');
-
-	desc := MTLDepthStencilDescriptor.alloc.init;
-	desc.setDepthCompareFunction(compareFunction);
-	desc.setDepthWriteEnabled(depthWriteEnabled);
-	desc.setFrontFaceStencil(frontFaceStencil);
-	desc.setBackFaceStencil(backFaceStencil);
-	desc.setLabel(NSSTR('MTLSetDepthStencil'));
-
-	// NOTE: who owns this now??
-	depthStencilState := device.newDepthStencilStateWithDescriptor(desc);
 	end;
 end;
 
 procedure MTLSetViewPort (constref viewport: MTLViewport);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setViewport(viewport);
 	end;
 end;
-		
+
 procedure MTLSetFragmentTexture (texture: MTLTextureProtocol; index: NSUInteger);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setFragmentTexture_atIndex(texture, index);
 	end;
 end;
 
 procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setFragmentBuffer_offset_atIndex(buffer, offset, index);
 	end;
 end;
 
 procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setFragmentBytes_length_atIndex(bytes, len, index);
 	end;
 end;
 
 procedure MTLSetVertexBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; index: NSUInteger);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setVertexBuffer_offset_atIndex(buffer, offset, index);
 	end;
 end;
@@ -192,8 +304,8 @@ end;
 
 procedure MTLSetVertexBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 begin
-	Fatal(CurrentThreadPipeline = nil, 'must call MTLBeginFrame first');
-	with CurrentThreadPipeline do begin
+	ValidateRenderFrame;
+	with CurrentThreadContext do begin
 	renderEncoder.setVertexBytes_length_atIndex(bytes, len, index);
 	end;
 end;
@@ -203,17 +315,15 @@ var
 	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
 	renderPassDescriptor: MTLRenderPassDescriptor;
 begin
-	CurrentThreadPipeline := pipeline;
-	with CurrentThreadPipeline do begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+
+	with CurrentThreadContext do begin
+	currentPipeline := pipeline;
 	commandBuffer := commandQueue.commandBuffer;
 
 	drawing := true;
 	renderPassDescriptor := view.currentRenderPassDescriptor;
 	Fatal(renderPassDescriptor = nil, 'views device is not set');
-
-	renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
-	renderEncoder.setRenderPipelineState(pipelineState);
-	renderEncoder.setDepthStencilState(depthStencilState);
 
 	// NOTE: MTKView does this for us
 	//colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
@@ -224,42 +334,114 @@ begin
 
 	// NOTE: depthAttachment is set automatically by the MTKView
 	//show(renderPassDescriptor.depthAttachment);
+
+	renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
 	end;
 end;
 
 procedure MTLEndFrame;
 begin
-	with CurrentThreadPipeline do begin
+	with CurrentThreadContext do begin
 	Fatal(renderEncoder = nil);
 
 	renderEncoder.endEncoding;
-	commandBuffer.presentDrawable(view.currentDrawable);
 
+	commandBuffer.presentDrawable(CurrentThreadContext.view.currentDrawable);
 	commandBuffer.commit;
 
 	commandBuffer := nil;
 	renderEncoder := nil;
 	drawing := false;
 	end;
-	CurrentThreadPipeline := nil;
 end;
 
-procedure MTLFree (var pipeline: TMetalPipeline);
+procedure MTLSetClearColor (clearColor: MTLClearColor; colorPixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; depthStencilPixelFormat: MTLPixelFormat = MTLPixelFormatDepth32Float);
 begin
-	with pipeline do begin
-	pipelineState.release;
-	commandQueue.release;
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	with CurrentThreadContext do begin
+	view.setClearColor(clearColor);
+	view.setColorPixelFormat(colorPixelFormat);
+	view.setDepthStencilPixelFormat(depthStencilPixelFormat);
 	end;
-	pipeline.Free;
-	pipeline := nil;
 end;
 
-function MTLCreatePipeline (view: MTKView; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline;
-	
-	function NSSTR(str: string): NSString; overload;
-	begin
-		result := NSString.stringWithCString_length(@str[1], length(str));
+procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: MTLCompareFunction = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
+var
+	desc: MTLDepthStencilDescriptor;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	with CurrentThreadContext do begin
+
+	if pipeline.depthStencilState <> nil then
+		pipeline.depthStencilState.release;
+
+	desc := MTLDepthStencilDescriptor.alloc.init.autorelease;
+	desc.setDepthCompareFunction(compareFunction);
+	desc.setDepthWriteEnabled(depthWriteEnabled);
+	desc.setFrontFaceStencil(frontFaceStencil);
+	desc.setBackFaceStencil(backFaceStencil);
+	desc.setLabel(NSSTR('MTLSetDepthStencil'));
+
+	pipeline.depthStencilState := device.newDepthStencilStateWithDescriptor(desc);
 	end;
+end;
+
+function MTLLoadTexture (bytes: pointer; width, height: integer; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm): MTLTextureProtocol;
+var
+	imageFileLocation: NSURL;
+	textureDescriptor: MTLTextureDescriptor;
+	bytesPerRow: integer;
+	region: MTLRegion;
+	texture: MTLTextureProtocol;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	with CurrentThreadContext do begin
+
+	textureDescriptor := MTLTextureDescriptor.alloc.init.autorelease;
+	textureDescriptor.setPixelFormat(pixelFormat);
+	textureDescriptor.setWidth(width);
+	textureDescriptor.setHeight(height);
+
+	texture := device.newTextureWithDescriptor(textureDescriptor);
+	Fatal(texture = nil, 'newTextureWithDescriptor failed');
+
+	bytesPerRow := 4 * width;
+
+	region := MTLRegionMake3D(0, 0, 0, width, height, 1);
+
+	texture.replaceRegion_mipmapLevel_withBytes_bytesPerRow(region, 0, bytes, bytesPerRow);
+	//show(texture);
+	end;
+
+	result := texture;
+end;
+
+procedure MTLMakeContextCurrent (context: TMetalContext);
+begin
+	CurrentThreadContext := context;
+end;
+
+function MTLCreateContext (view: MTKView): TMetalContext;
+var
+	context: TMetalContext;
+begin
+	context := TMetalContext.Create;
+	context.view := view;
+	context.device := view.device;
+
+	Fatal(context.device = nil, 'no gpu device found.');
+	Show(context.device, 'GPU:');
+	
+	context.commandQueue := context.device.newCommandQueue;
+
+	// set default pixel formats
+	view.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
+	view.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
+
+	result := context;
+end;
+
+function MTLCreateLibrary (options: TMetalLibraryOptions): TMetalLibrary;
 
 	function CompileShader (device: MTLDeviceProtocol; name: string): MTLLibraryProtocol;
 	var
@@ -274,97 +456,96 @@ function MTLCreatePipeline (view: MTKView; options: TMetalPipelineOptionsPtr = n
 	end;
 
 var
-	shaderLibrary: MTLLibraryProtocol;
+	metalLibrary: TMetalLibrary;
+	error: NSError = nil;
+	device: MTLDeviceProtocol;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+
+	device := CurrentThreadContext.device;
+	metalLibrary := TMetalLibrary.Create;
+
+	if options.shaderName <> '' then
+		metalLibrary.lib := CompileShader(device, options.shaderName)
+	else if options.libraryName <> '' then
+		metalLibrary.lib := device.newLibraryWithFile_error(NSSTR(options.libraryName), @error)
+	else if options.libraryName = '' then
+		metalLibrary.lib := device.newDefaultLibrary;
+
+	Fatal(metalLibrary.lib = nil, 'no metal shaders could be loaded.', error);
+	Show(metalLibrary.lib);
+
+	result := metalLibrary;
+end;
+
+function MTLCreatePipeline (options: TMetalPipelineOptions): TMetalPipeline;
+var
+	shaderLibrary: TMetalLibrary;
 	vertexFunction: MTLFunctionProtocol = nil;
 	fragmentFunction: MTLFunctionProtocol = nil;
+	
 	colorAttachment: MTLRenderPipelineColorAttachmentDescriptor;
 	pipelineStateDescriptor: MTLRenderPipelineDescriptor;
 
 	error: NSError = nil;
 	pipeline: TMetalPipeline;
+	device: MTLDeviceProtocol;
+	view: MTKView;
+	libraryOptions: TMetalLibraryOptions;
 begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+
 	pipeline := TMetalPipeline.Create;
-	pipeline.view := view;
 	with pipeline do
 		begin
-			CurrentThreadPipeline := nil;
-			device := view.device;
-			Fatal(device = nil, 'no gpu device found.');
-			Show(device, 'GPU:');
+			device := CurrentThreadContext.device;
+			view := CurrentThreadContext.view;
 
-			// Create the command queue
-			commandQueue := device.newCommandQueue;
-
-			if options <> nil then
+			// Load shader library
+			if options.shaderLibrary = nil then
 				begin
-					if options^.shaderName <> '' then
-						begin
-							shaderLibrary := CompileShader(device, options^.shaderName);
-						end
-					else if options^.libraryName <> '' then
-						begin
-							if options^.libraryName = '' then
-								shaderLibrary := device.newDefaultLibrary
-							else
-								shaderLibrary := device.newLibraryWithFile_error(NSSTR(options^.libraryName), @error);
-						end;
+					Fatal(SharedShaderLibrary <> nil, 'shared metal library is already loaded.');
+					libraryOptions := TMetalLibraryOptions.Default;
+					libraryOptions.shaderName := options.shaderName;
+					libraryOptions.libraryName := options.libraryName;
+					SharedShaderLibrary := MTLCreateLibrary(libraryOptions);
+					shaderLibrary := SharedShaderLibrary;
 				end
 			else
-				begin
-					shaderLibrary := device.newDefaultLibrary;
-				end;
+				shaderLibrary := options.shaderLibrary;
 
-			Fatal(shaderLibrary = nil, 'no metal shaders could be loaded.', error);
-				
-			Show(shaderLibrary);
-
-			// Load the vertex function from the library
-			if options <> nil then
-				vertexFunction := shaderLibrary.newFunctionWithName(NSSTR(options^.vertexFunction))
-			else
-				vertexFunction := shaderLibrary.newFunctionWithName(NSSTR('vertexShader'));
-
+			vertexFunction := shaderLibrary.GetFunction(options.vertexShader);
 			Fatal(vertexFunction = nil, 'vertex shader not found.');
 
-			// Load the fragment function from the library
-			if options <> nil then
-				fragmentFunction := shaderLibrary.newFunctionWithName(NSSTR(options^.fragmentFunction))
-			else
-				fragmentFunction := shaderLibrary.newFunctionWithName(NSSTR('fragmentShader'));
-
+			fragmentFunction := shaderLibrary.GetFunction(options.fragmentShader);
 			Fatal(fragmentFunction = nil, 'fragment shader not found.');
 
-			// set default pixel formats
-			// NOTE: these can be overriden in MTLSetClearColor
-			view.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
-			view.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
-
-			// TODO: for different shaders we need to make multiple pipelineState's
-			// which can be set between begin/end frame calls
-			pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init;
+			pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
 			pipelineStateDescriptor.setVertexFunction(vertexFunction);
 			pipelineStateDescriptor.setFragmentFunction(fragmentFunction);
 			pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
-
-			if options <> nil then
-				pipelineStateDescriptor.setVertexDescriptor(options^.vertexDescriptor);
+			pipelineStateDescriptor.setVertexDescriptor(options.vertexDescriptor);
 
 			colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
 			colorAttachment.setPixelFormat(view.colorPixelFormat);
 
+			if options.blendingEnabled then
+				begin
+					colorAttachment.setBlendingEnabled(true);
+
+					colorAttachment.setRgbBlendOperation(options.rgbBlendOperation);
+					colorAttachment.setAlphaBlendOperation(options.alphaBlendOperation);
+
+					colorAttachment.setSourceRGBBlendFactor(options.sourceRGBBlendFactor);
+					colorAttachment.setDestinationRGBBlendFactor(options.destinationRGBBlendFactor);
+
+					colorAttachment.setSourceAlphaBlendFactor(options.sourceAlphaBlendFactor);
+					colorAttachment.setDestinationAlphaBlendFactor(options.destinationAlphaBlendFactor);
+				end;
+
 			pipelineState := device.newRenderPipelineStateWithDescriptor_error(pipelineStateDescriptor, @error);
 
-			// Pipeline State creation could fail if we haven't properly set up our pipeline descriptor.
-			//  If the Metal API validation is enabled, we can find out more information about what
-			//  went wrong.  (Metal API validation is enabled by default when a debug build is run
-			//  from Xcode)
 			Fatal(pipelineState = nil, 'pipeline creation failed.', error);
-
-			// cleanup temporary state
-			pipelineStateDescriptor.release;
-			vertexFunction.release;
-			fragmentFunction.release;
-			shaderLibrary.release;
 		end;
 
 	result := pipeline;

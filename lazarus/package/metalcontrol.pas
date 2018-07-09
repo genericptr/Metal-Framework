@@ -47,6 +47,7 @@ type
 			procedure Prepare; virtual;
 		private
 			renderer: TMTKRenderer;
+			context: TMetalContext;
 			procedure LoadMetal;
 	end;
 
@@ -82,7 +83,7 @@ type
   	property OnMouseWheelUp;
   end;
 
-function MTLCreatePipeline (control: TMetalControl; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline; overload; inline;
+function MTLCreateContext (control: TMetalControl): TMetalContext; overload; inline;
 
 procedure Register;
 
@@ -92,9 +93,9 @@ implementation
 {@! ___UTILS___ } 
 {=============================================}
 
-function MTLCreatePipeline (control: TMetalControl; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline; overload; inline;
+function MTLCreateContext (control: TMetalControl): TMetalContext;
 begin
-	result := MTLCreatePipeline(control.renderView, options);
+	result := MTLCreateContext(control.renderView);
 end;
 
 {=============================================}
@@ -135,18 +136,14 @@ begin
 	device := MTLCreateSystemDefaultDevice;
 	renderView := MTKView.alloc.initWithFrame_device(CGRectMake(0, 0, 0, 0), device);
 	
-	// set default pixel formats
-	renderView.setColorPixelFormat(MTLPixelFormatBGRA8Unorm);
-	renderView.setDepthStencilPixelFormat(MTLPixelFormatDepth32Float);
-
-	// device is retained by MTKView so we can release now
-	//device.release;
-
 	if renderView.device = nil then
 		begin
 			writeln('metal is not supported on this device');
 			halt;
 		end;
+
+	context := MTLCreateContext(renderView);
+	MTLMakeContextCurrent(context);
 
 	// add render view to TWinControl view handle
 	superview := NSView(Handle);
@@ -186,6 +183,7 @@ end;
 procedure TMetalBaseControl.DestroyWnd;
 begin
 	renderer.release;	
+	context.Free;
 
 	inherited;
 end;
