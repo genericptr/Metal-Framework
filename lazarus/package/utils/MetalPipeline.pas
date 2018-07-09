@@ -10,10 +10,7 @@ uses
 type
 	TMetalPipeline = class
 		pipelineState: MTLRenderPipelineStateProtocol;
-
-		// states
 		depthStencilState: MTLDepthStencilStateProtocol;
-
 		destructor Destroy; override;
 	end;
 

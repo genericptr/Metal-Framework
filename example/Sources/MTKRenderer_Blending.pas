@@ -44,12 +44,12 @@ uses
 	TGALoader, CocoaUtils;
 
 type
-	TTexQuad = record
+	TTexVertex = record
 		position: TVec2;
 		texCoord: TVec2;
 	end;
 
-function TexQuad(constref position: TVec2; constref texCoord: TVec2): TTexQuad;
+function TexVertex(constref position: TVec2; constref texCoord: TVec2): TTexVertex;
 begin
 	result.position := position;
 	result.texCoord := texCoord;
@@ -58,43 +58,9 @@ end;
 {=============================================}
 {@! ___RENDERER___ } 
 {=============================================}
-function Mat4Ortho (Left,Right,Bottom,Top,Near,Far:TScalar): TMat4;
-//https://stackoverflow.com/questions/36295339/metal-nothing-is-rendered-when-using-orthographic-projection-matrix#40856855
-var
-  sLength,sHeight, sDepth: single;
-begin
-  sLength := 1.0 / (Right - left);
-  sHeight := 1.0 / (Top   - bottom);
-  sDepth  := 1.0 / (Far   - Near);
-  result[0,0] := 2.0 * sLength;
-  result[0,1] := 0.0;
-  result[0,2] := 0.0;
-  result[0,3] := 0.0;
-  result[1,0] := 0.0;
-  result[1,1] := 2.0 * sHeight;
-  result[1,2] := 0.0;
-  result[1,3] := 0.0;
-  result[2,0] := 0.0;
-  result[2,1] := 0.0;
-  result[2,2] := sDepth;
-  result[2,3] := 0.0;
-  result[3,0] := 0.0;
-  result[3,1] := 0.0;
-  result[3,2] := -near  * sDepth;;
-  result[3,3] := 1.0;
-end;
-
-type
-	NSScreenMissing = objccategory external (NSScreen)
-		function backingScaleFactor: CGFloat; message 'backingScaleFactor';
-	end;
 
 procedure TMTKRenderer.mtkView_drawableSizeWillChange (fromView: MTKView; size: CGSize);
-var
-	scale: single;
 begin
-	//scale := fromView.window.screen.backingScaleFactor;
-
 	viewport.originX := 0;
 	viewport.originY := 0;
 	viewport.width := size.width;
@@ -102,8 +68,7 @@ begin
 	viewport.znear := 0;
 	viewport.zfar := 100;
 
-	//uniforms.projectionMatrix := TMat4.Ortho(0, viewport.width, viewport.height, 0, viewport.znear, viewport.zfar);
-	uniforms.projectionMatrix := Mat4Ortho(0, viewport.width, viewport.height, 0, viewport.znear, viewport.zfar);
+	uniforms.projectionMatrix := TMat4.Ortho(0, viewport.width, viewport.height, 0, viewport.znear, viewport.zfar);
 end;
 
 
@@ -111,32 +76,16 @@ procedure TMTKRenderer.drawInMTKView (fromView: MTKView);
 var
 	scale: single;
 	size: single = 200 / 2;
-	vertices: array[0..5] of TTexQuad;
+	vertices: array[0..5] of TTexVertex;
 begin
 	scale := 3.45;
 
-	//uniforms.modelMatrix := TMat4.Identity;
-	//uniforms.modelMatrix *= TMat4.Translate(0, 0, 0);
-	//uniforms.modelMatrix *= TMat4.RotateY(DegToRad(rotation));
-	//uniforms.modelMatrix *= TMat4.Scale(scale, scale, scale);
-	//rotation += 0.8;
-
-	vertices[0] := TexQuad(V2(size,  -size),  V2(1, 0));
-	vertices[1] := TexQuad(V2(-size,  -size), V2(0, 0));
-	vertices[2] := TexQuad(V2(-size,   size), V2(0, 1));
-	vertices[3] := TexQuad(V2(size,  -size),  V2(1, 0));
-	vertices[4] := TexQuad(V2(-size,   size), V2(0, 1));
-	vertices[5] := TexQuad(V2(size,   size),  V2(1, 1));
-
-
-	// single shader
-	//MTLBeginFrame(defaultShader);
-	//	MTLSetFragmentTexture(texture, 0);
-	//	MTLSetVertexBytes(@vertices, sizeof(vertices), 0);
-	//	uniforms.modelMatrix := TMat4.Identity;
-	//	MTLSetVertexBytes(@uniforms, sizeof(uniforms), TWorldUniforms.Index);
-	//	MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
-	//MTLEndFrame;
+	vertices[0] := TexVertex(V2(size,  -size),  V2(1, 0));
+	vertices[1] := TexVertex(V2(-size,  -size), V2(0, 0));
+	vertices[2] := TexVertex(V2(-size,   size), V2(0, 1));
+	vertices[3] := TexVertex(V2(size,  -size),  V2(1, 0));
+	vertices[4] := TexVertex(V2(-size,   size), V2(0, 1));
+	vertices[5] := TexVertex(V2(size,   size),  V2(1, 1));
 
 	MTLBeginFrame;
 
@@ -199,8 +148,6 @@ begin
 	options.blendingEnabled := true;
 	options.destinationRGBBlendFactor := MTLBlendFactorOneMinusDestinationColor;
 	blendShader := MTLCreatePipeline(options);
-
-	//MTLSetDepthStencil(blendShader, MTLCompareFunctionLess, true);
 
 	MTLSetClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
 
