@@ -93,12 +93,12 @@ begin
 		MTLSetVertexBytes(@vertices, sizeof(vertices), 0);
 		
 		MTLSetShader(defaultShader);
-			uniforms.modelMatrix := TMat4.Identity;
+			uniforms.modelMatrix := TMat4.Translate(200, 200, 0);
 			MTLSetVertexBytes(@uniforms, sizeof(uniforms), TWorldUniforms.Index);
 			MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
 
 		MTLSetShader(blendShader);
-			uniforms.modelMatrix := TMat4.Translate(20, 20, 0);
+			uniforms.modelMatrix := TMat4.Translate(220, 220, 0);
 			MTLSetVertexBytes(@uniforms, sizeof(uniforms), TWorldUniforms.Index);
 			MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
 

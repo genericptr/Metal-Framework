@@ -911,28 +911,27 @@ begin
 end;
 
 constructor TMat4.Ortho(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
-var
-  sLength,sHeight, sDepth: TScalar;
+var rml,tmb,fmn: TScalar;
 begin
-  sLength := 1.0 / (Right - left);
-  sHeight := 1.0 / (Top   - bottom);
-  sDepth  := 1.0 / (zFar   - zNear);
-  m[0,0] := 2.0 * sLength;
-  m[0,1] := 0.0;
-  m[0,2] := 0.0;
-  m[0,3] := 0.0;
-  m[1,0] := 0.0;
-  m[1,1] := 2.0 * sHeight;
-  m[1,2] := 0.0;
-  m[1,3] := 0.0;
-  m[2,0] := 0.0;
-  m[2,1] := 0.0;
-  m[2,2] := sDepth;
-  m[2,3] := 0.0;
-  m[3,0] := 0.0;
-  m[3,1] := 0.0;
-  m[3,2] := -zNear  * sDepth;;
-  m[3,3] := 1.0;
+	rml:=Right-Left;
+	tmb:=Top-Bottom;
+	fmn:=zFar-zNear;
+	m[0,0]:=2.0/rml;
+	m[0,1]:=0.0;
+	m[0,2]:=0.0;
+	m[0,3]:=0.0;
+	m[1,0]:=0.0;
+	m[1,1]:=2.0/tmb;
+	m[1,2]:=0.0;
+	m[1,3]:=0.0;
+	m[2,0]:=0.0;
+	m[2,1]:=0.0;
+	m[2,2]:=(-1.0)/fmn;
+	m[2,3]:=0.0;
+	m[3,0]:=(-(Right+Left))/rml;
+	m[3,1]:=(-(Top+Bottom))/tmb;
+	m[3,2]:=(-(zNear))/fmn;
+	m[3,3]:=1.0;  
 end;
 
 // NOTE: wrong clip space for metal!

@@ -69,132 +69,66 @@ end;
 
 // https://forums.developer.apple.com/thread/30488
 // https://forums.developer.apple.com/thread/65037
-
-//procedure SaveImage(view: MTKView; path: pchar);
-//var
-//  bitmap: NSBitmapImageRep;
-//  props: NSDictionary;
-//  imageData: NSData;
-//  texture: MTLTextureProtocol;
-//begin  
-//	texture := view.currentDrawable.texture;
-//	show(texture);
-
-
-
-//  bitmap := view.bitmapImageRepForCachingDisplayInRect(view.bounds);
-//  view.cacheDisplayInRect_toBitmapImageRep(view.bounds, bitmap);
-
-//  props := NSDictionary.alloc.init.autorelease;
-//  imageData := bitmap.representationUsingType_properties(NSPNGFileType, props);
-//  imageData.writeToFile_atomically(NSSTR(path), false);
-//end;
+// https://stackoverflow.com/questions/33844130/take-a-snapshot-of-current-screen-with-metal-in-swift
 
 (*
 
+import Metal
+import MetalKit
+import Cocoa
 
-create MTLBuffer
-let imageBuffer = device.newBufferWithLength( imageByteCount, options: MTLResourceOptions.CPUCacheModeDefaultCache)  
-2. create Blit operation encoder
-let blitEncoder = commandBuffer.blitCommandEncoder()  
-3. copy texture to shared buffer
-blitEncoder.copyFromTexture(texture,  
-                    sourceSlice: 0,  
-                    sourceLevel: 0,  
-                    sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),  
-                    sourceSize: MTLSize.width: width, height: height, depth: 1),  
-                    toBuffer: imageBuffer,  
-                    destinationOffset: 0,  
-                    destinationBytesPerRow: bytesPerRow,  
-                    destinationBytesPerImage: 0)  
-              
-blitEncoder.endEncoding()  
-4. do somthing with buffer content
-            var rawData   = [UInt8](count: width*height*components, repeatedValue: 0)  
-            if texture.pixelFormat == .RGBA16Unorm {  
-                for var i=0; i < rawData.count; i++ {  
-                    var pixel = UInt16()  
-                    let address =  UnsafePointer<UInt16>(imageBuffer.contents())+i  
-                    memcpy(&pixel, address, sizeof(UInt16))  
-                    rawData[i] = UInt8(pixel>>8)  
-                }  
-            }  
-            else{  
-                memcpy(&rawData, imageBuffer.contents(), imageBuffer.length)  
-            }  
-           
-            let cgprovider = 
+let device = MTLCreateSystemDefaultDevice()!
+let textureLoader = MTKTextureLoader(device: device)
+
+// PATH TO YOUR IMAGE FILE
+let path = "/Users/haawa799/Desktop/Metal_Snapshot.playground/Resources/q.jpg"
+let data = NSData(contentsOfFile: path)!
+
+let texture = try! textureLoader.newTextureWithData(data, options: nil)
+
+extension MTLTexture {
+
+  func bytes() -> UnsafeMutablePointer<Void> {
+    let width = self.width
+    let height   = self.height
+    let rowBytes = self.width * 4
+    let p = malloc(width * height * 4)
+
+    self.getBytes(p, bytesPerRow: rowBytes, fromRegion: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
+
+    return p
+  }
+
+  func toImage() -> CGImage? {
+    let p = bytes()
+
+    let pColorSpace = CGColorSpaceCreateDeviceRGB()
+
+    let rawBitmapInfo = CGImageAlphaInfo.NoneSkipFirst.rawValue | CGBitmapInfo.ByteOrder32Little.rawValue
+    let bitmapInfo:CGBitmapInfo = CGBitmapInfo(rawValue: rawBitmapInfo)
+
+    let selftureSize = self.width * self.height * 4
+    let rowBytes = self.width * 4
+    let provider = CGDataProviderCreateWithData(nil, p, selftureSize, nil)
+    let cgImageRef = CGImageCreate(self.width, self.height, 8, 32, rowBytes, pColorSpace, bitmapInfo, provider, nil, true, CGColorRenderingIntent.RenderingIntentDefault)!
+
+    return cgImageRef
+  }
+}
+
+if let imageRef = texture.toImage() {
+  let image = NSImage(CGImage: imageRef, size: NSSize(width: texture.width, height: texture.height))
+
 *)
 
-(*
 procedure SaveImage(view: MTKView; path: pchar);
 var
   texture: MTLTextureProtocol;
-  bytesPerRow: integer;
-  //region: MTLRegion;
-  //context: CGContextRef;
-  //colorSpace: CGColorSpaceRef;
-  //image: CGImageRef;
-  //bytes: pointer;
-
-  imageBuffer: MTLBufferProtocol;
-  blitEncoder: MTLBlitCommandEncoderProtocol;
 begin  
 	texture := view.currentDrawable.texture;
 	show(texture);
 
-	// todo: force size
-	//textureType = MTLTextureType2D 
-	//pixelFormat = MTLPixelFormatBGRA8Unorm 
-
-	Fatal(texture.textureType <> MTLTextureType2D, 'texture must be 2D');
-
-	bytesPerRow := 4 * texture.width;
-	bytesPerTexture := bytesPerRow * texture.height;
-
-	imageBuffer := view.device.newBufferWithLength_options(bytesPerTexture, CPUCacheModeDefaultCache);
-	blitEncoder := commandBuffer.blitCommandEncoder;
-
-	blitEncoder.copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toTexture_destinationSlice_destinationLevel_destinationOrigin(
-		0,  
-		0,  
-		MTLOriginMake(0, 0, 0),  
-		MTLSizeMake(: MTLSize.width: width, height: height, depth: 1),  
-		toBuffer: imageBuffer,  
-		destinationOffset: 0,  
-		destinationBytesPerRow: bytesPerRow,  
-		destinationBytesPerImage: 0
-		);
-
-    procedure copyFromTexture_sourceSlice_sourceLevel_sourceOrigin_sourceSize_toTexture_destinationSlice_destinationLevel_destinationOrigin (sourceTexture: MTLTextureProtocol; sourceSlice: NSUInteger; sourceLevel: NSUInteger; sourceOrigin: MTLOrigin; sourceSize: MTLSize; destinationTexture: MTLTextureProtocol; destinationSlice: NSUInteger; destinationLevel: NSUInteger; destinationOrigin: MTLOrigin); overload; message 'copyFromTexture:sourceSlice:sourceLevel:sourceOrigin:sourceSize:toTexture:destinationSlice:destinationLevel:destinationOrigin:';
-
-	let blitEncoder = commandBuffer.blitCommandEncoder()  
-	3. copy texture to shared buffer
-	blitEncoder.copyFromTexture(texture,  
-	                    sourceSlice: 0,  
-	                    sourceLevel: 0,  
-	                    sourceOrigin: MTLOrigin(x: 0, y: 0, z: 0),  
-	                    sourceSize: MTLSize.width: width, height: height, depth: 1),  
-	                    toBuffer: imageBuffer,  
-	                    destinationOffset: 0,  
-	                    destinationBytesPerRow: bytesPerRow,  
-	                    destinationBytesPerImage: 0)  
-
-
-	//region := MMTLRegionMake2D(0, 0, texture.width, texture.height);
-	//bytes := GetMem(bytesPerRow * texture.height);
-	//texture.getBytes_bytesPerRow_fromRegion_mipmapLevel(bytes, bytesPerRow, region, 0);
-
-	//colorSpace := CGColorSpaceCreateDeviceRGB;
-	//context := CGBitmapContextCreate(bytes, trunc(texture.width), trunc(texture.height), 8, bytesPerRow, colorSpace, kCGImageAlphaPremultipliedLast);
-	//image := CGBitmapContextCreateImage(context);
-
-	//CFShow(image);
-
-	//CGColorSpaceRelease(colorSpace);
-	//FreeMem(bytes);
 end;
-*)
 
 procedure TMTKRenderer.drawTriangle;
 var

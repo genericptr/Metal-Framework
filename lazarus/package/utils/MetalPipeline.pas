@@ -8,9 +8,20 @@ uses
 	MetalUtils, Metal, MetalKit, CocoaAll, SysUtils;
 
 type
+	TMetalLibrary = class
+		lib: MTLLibraryProtocol;
+		functions: NSMutableDictionary;
+
+		function GetFunction (name: string): MTLFunctionProtocol;
+		destructor Destroy; override;
+	end;
+
+type
 	TMetalPipeline = class
 		pipelineState: MTLRenderPipelineStateProtocol;
 		depthStencilState: MTLDepthStencilStateProtocol;
+		shaderLibrary: TMetalLibrary;
+
 		destructor Destroy; override;
 	end;
 
@@ -26,15 +37,6 @@ type
 		renderEncoder: MTLRenderCommandEncoderProtocol;
 		drawing: boolean;
 
-		destructor Destroy; override;
-	end;
-
-type
-	TMetalLibrary = class
-		lib: MTLLibraryProtocol;
-		functions: NSMutableDictionary;
-
-		function GetFunction (name: string): MTLFunctionProtocol;
 		destructor Destroy; override;
 	end;
 
@@ -81,10 +83,14 @@ procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; i
 procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 
 { Textures }
-function MTLLoadTexture (bytes: pointer; width, height: integer; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm): MTLTextureProtocol;
+function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
+
+{ Buffers }
+function MTLNewBuffer (bytes: pointer; len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol; overload;
+function MTLNewBuffer (len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol; overload;
 
 { Render Encoder }
-procedure MTLSetShader(pipeline: TMetalPipeline);
+procedure MTLSetShader (pipeline: TMetalPipeline);
 
 procedure MTLSetFragmentTexture (texture: MTLTextureProtocol; index: NSUInteger);
 procedure MTLSetViewPort (constref viewport: MTLViewport);
@@ -116,7 +122,6 @@ const
 
 threadvar
 	CurrentThreadContext: TMetalContext;
-	SharedShaderLibrary: TMetalLibrary;
 
 function NSSTR(str: string): NSString; overload;
 begin
@@ -139,10 +144,10 @@ begin
 	result.shaderLibrary := nil;
 
 	result.blendingEnabled := false;
-	result.sourceRGBBlendFactor := MTLBlendFactorZero;
+	result.sourceRGBBlendFactor := MTLBlendFactorOne;
 	result.destinationRGBBlendFactor := MTLBlendFactorZero;
 	result.rgbBlendOperation := MTLBlendOperationAdd;
-	result.sourceAlphaBlendFactor := MTLBlendFactorZero;
+	result.sourceAlphaBlendFactor := MTLBlendFactorOne;
 	result.destinationAlphaBlendFactor := MTLBlendFactorZero;
 	result.alphaBlendOperation := MTLBlendOperationAdd;
 end;
@@ -187,7 +192,8 @@ destructor TMetalPipeline.Destroy;
 begin
 	pipelineState.release;
 	depthStencilState.release;
-
+	if shaderLibrary <> nil then
+		shaderLibrary.Free;
 	inherited;
 end;
 
@@ -383,7 +389,19 @@ begin
 	end;
 end;
 
-function MTLLoadTexture (bytes: pointer; width, height: integer; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm): MTLTextureProtocol;
+function MTLNewBuffer(bytes: pointer; len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	result := CurrentThreadContext.device.newBufferWithBytes_length_options(bytes, len, options);
+end;
+
+function MTLNewBuffer(len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	result := CurrentThreadContext.device.newBufferWithLength_options(len, options);
+end;
+
+function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
 var
 	imageFileLocation: NSURL;
 	textureDescriptor: MTLTextureDescriptor;
@@ -395,6 +413,7 @@ begin
 	with CurrentThreadContext do begin
 
 	textureDescriptor := MTLTextureDescriptor.alloc.init.autorelease;
+	textureDescriptor.setTextureType(MTLTextureType2D);
 	textureDescriptor.setPixelFormat(pixelFormat);
 	textureDescriptor.setWidth(width);
 	textureDescriptor.setHeight(height);
@@ -402,7 +421,7 @@ begin
 	texture := device.newTextureWithDescriptor(textureDescriptor);
 	Fatal(texture = nil, 'newTextureWithDescriptor failed');
 
-	bytesPerRow := 4 * width;
+	bytesPerRow := bytesPerComponent * width;
 
 	region := MTLRegionMake3D(0, 0, 0, width, height, 1);
 
@@ -477,7 +496,6 @@ end;
 
 function MTLCreatePipeline (options: TMetalPipelineOptions): TMetalPipeline;
 var
-	shaderLibrary: TMetalLibrary;
 	vertexFunction: MTLFunctionProtocol = nil;
 	fragmentFunction: MTLFunctionProtocol = nil;
 	
@@ -501,12 +519,10 @@ begin
 			// Load shader library
 			if options.shaderLibrary = nil then
 				begin
-					Fatal(SharedShaderLibrary <> nil, 'shared metal library is already loaded.');
 					libraryOptions := TMetalLibraryOptions.Default;
 					libraryOptions.shaderName := options.shaderName;
 					libraryOptions.libraryName := options.libraryName;
-					SharedShaderLibrary := MTLCreateLibrary(libraryOptions);
-					shaderLibrary := SharedShaderLibrary;
+					shaderLibrary := MTLCreateLibrary(libraryOptions);
 				end
 			else
 				shaderLibrary := options.shaderLibrary;

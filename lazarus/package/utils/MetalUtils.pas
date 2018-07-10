@@ -18,6 +18,7 @@ function NSSTR(str: string): NSString; overload;
 
 function ResourcePath (name: pchar; ofType: pchar): string;
 function ResourceURL (name: pchar; ofType: pchar): NSURL;
+function ResourceFolderPath: string;
 
 implementation
 
@@ -34,6 +35,11 @@ function NSSTR(str: string): NSString; overload;
 begin
 	result := NSString.stringWithCString_length(@str[1], length(str));
 end;
+
+function ResourceFolderPath: string;
+begin
+	result := NSBundle.mainBundle.resourcePath.UTF8String;
+end;     
 
 function ResourceURL (name: pchar; ofType: pchar): NSURL;
 var
