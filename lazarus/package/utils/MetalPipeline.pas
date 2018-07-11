@@ -31,11 +31,14 @@ type
 		device: MTLDeviceProtocol;
 		commandQueue: MTLCommandQueueProtocol;
 		currentPipeline: TMetalPipeline;
+		textureLoader: MTKTextureLoader;
 
 		// drawing
 		commandBuffer: MTLCommandBufferProtocol;
 		renderEncoder: MTLRenderCommandEncoderProtocol;
 		drawing: boolean;
+
+		class function SharedContext: TMetalContext;
 
 		destructor Destroy; override;
 	end;
@@ -83,7 +86,10 @@ procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; i
 procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 
 { Textures }
+function MTLLoadTexture (path: string): MTLTextureProtocol;
 function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
+procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar); overload;
+procedure MTLWriteTextureToFile(path: pchar); overload;
 
 { Buffers }
 function MTLNewBuffer (bytes: pointer; len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol; overload;
@@ -114,6 +120,9 @@ function MTLCreatePipeline (options: TMetalPipelineOptions): TMetalPipeline;
 procedure MTLMakeContextCurrent (context: TMetalContext);
 
 implementation
+uses
+	MacOSAll,
+	CGImage, CGDataProvider, CGColorSpace; // FPC RTL CocoaAll.pas doesn't use MacOSAll types!
 
 const
 	kError_InvalidContext = 'no current context';
@@ -152,9 +161,15 @@ begin
 	result.alphaBlendOperation := MTLBlendOperationAdd;
 end;
 
+class function TMetalContext.SharedContext: TMetalContext;
+begin
+	result := CurrentThreadContext;
+end;
+
 destructor TMetalContext.Destroy;
 begin
 	commandQueue.release;
+	textureLoader.release;
 
 	inherited;
 end;
@@ -401,6 +416,24 @@ begin
 	result := CurrentThreadContext.device.newBufferWithLength_options(len, options);
 end;
 
+function MTLLoadTexture (path: string): MTLTextureProtocol;
+var
+	error: NSError;
+	data: NSData;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	with CurrentThreadContext do begin
+	if textureLoader = nil then
+		textureLoader := MTKTextureLoader.alloc.initWithDevice(device);
+
+	data := NSData.dataWithContentsOfFile_options_error(NSSTR(path), 0, @error);
+	Fatal(data = nil, 'Error loading texture', error);
+
+	result := textureLoader.newTextureWithData_options_error(data, nil, @error);
+	Fatal(result = nil, 'Error loading texture', error);
+	end;
+end;
+
 function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
 var
 	imageFileLocation: NSURL;
@@ -430,6 +463,83 @@ begin
 	end;
 
 	result := texture;
+end;
+
+procedure MTLWriteTextureToFile(path: pchar);
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	with CurrentThreadContext do begin
+	view.setFramebufferOnly(false);
+	view.draw;
+	view.draw;
+	view.draw;
+	MTLWriteTextureToFile(view.currentDrawable.texture, path);
+	view.setFramebufferOnly(true);
+	end;
+end;
+
+procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar);
+var
+  width, height, bytesPerRow, bytesCount: integer;
+  bytes: pointer;
+  colorSpace: CGColorSpaceRef;
+  bitmapInfo: CGBitmapInfo;
+  provider: CGDataProviderRef;
+  imageRef: CGImageRef;
+
+  blitEncoder: MTLBlitCommandEncoderProtocol;
+  imageBuffer: MTLBufferProtocol;
+
+  finalImage: NSImage;
+  imageData: NSData;
+  imageRep: NSBitmapImageRep;
+  imageProps: NSDictionary;
+begin  
+	
+	Fatal(texture.pixelFormat <> MTLPixelFormatBGRA8Unorm, 'texture must be MTLPixelFormatBGRA8Unorm pixel format.');
+
+	// read bytes
+	width := texture.width;
+	height := texture.height;
+	bytesPerRow := texture.width * 4;
+	bytesCount := width * height * 4;
+	bytes := GetMem(bytesCount);
+
+(*
+	//https://forums.developer.apple.com/thread/95327
+	imageBuffer := view.device.newBufferWithLength_options(bytesCount, MTLResourceCPUCacheModeDefaultCache);
+	blitEncoder := commandBuffer.blitCommandEncoder;
+	blitEncoder.copyFromTexture(
+															texture,  
+					                    {sourceSlice:} 0,  
+					                    {sourceLevel:} 0,  
+					                    {sourceOrigin:} MTLOriginMake(0, 0, 0),  
+					                    {sourceSize:} MTLSizeMake(width, height, 1),  
+					                    {toBuffer:} imageBuffer,  
+					                    {destinationOffset:} 0,  
+					                    {destinationBytesPerRow:} bytesPerRow,  
+					                    {destinationBytesPerImage:} 0);
+	blitEncoder.endEncoding;
+
+	//BlockMove(bytes, imageBuffer.contents, imageBuffer.length);  
+*)
+
+	texture.getBytes_bytesPerRow_fromRegion_mipmapLevel(bytes, bytesPerRow, MTLRegionMake2D(0, 0, width, height), 0);
+
+	colorSpace := CGColorSpaceCreateDeviceRGB;
+	bitmapInfo := kCGImageAlphaFirst or kCGBitmapByteOrder32Little;
+	provider := CGDataProviderCreateWithData(nil, bytes, bytesCount, nil);
+	imageRef := CGImageCreate(width, height, 8, 32, bytesPerRow, colorSpace, bitmapInfo, provider, nil, 1, kCGRenderingIntentDefault);
+
+	finalImage := NSImage.alloc.initWithCGImage_size(imageRef, NSMakeSize(width, height));
+	imageData := finalImage.TIFFRepresentation;
+	imageRep := NSBitmapImageRep.imageRepWithData(imageData);
+	//imageProps := NSDictionary.dictionaryWithObject_forKey(NSNumber.numberWithFloat(1), NSImageCompressionFactor);
+	imageData := imageRep.representationUsingType_properties(NSPNGFileType, nil);
+	imageData.writeToFile_atomically(NSSTR(path), false);
+
+	CFRelease(provider);
+	CFRelease(imageRef);
 end;
 
 procedure MTLMakeContextCurrent (context: TMetalContext);

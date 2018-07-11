@@ -4,14 +4,14 @@
 unit AppDelegate;
 interface
 uses
-	//MTKRenderer_HelloTriangle,
+	MTKRenderer_HelloTriangle,
 	//MTKRenderer_BasicBuffers,
 	//MTKRenderer_BasicTexturing,
 	//MTKRenderer_API,
 	//MTKRenderer_Cube,
 	//MTKRenderer_DepthStencil,
 	//MTKRenderer_OBJ,
-	MTKRenderer_Blending,
+	//MTKRenderer_Blending,
 	MetalKit, Metal, CocoaAll, MacOSAll;
 
 type
@@ -22,9 +22,24 @@ type
    		window: NSWindow;
    		renderView: MTKView;
    		renderer: TMTKRenderer;
+
+   		procedure takeScreenshot (sender: id); message 'takeScreenshot:';
  	end;
 
 implementation
+uses
+	MetalPipeline;
+	
+procedure TAppController.takeScreenshot (sender: id);
+begin
+	writeln('take screen shot');
+	renderView.setFramebufferOnly(false);
+	renderView.draw;
+	renderView.draw;
+	renderView.draw;
+	MTLWriteTextureToFile(renderView.currentDrawable.texture, 'metal-triangle.png');
+	renderView.setFramebufferOnly(true);
+end;
 
 procedure TAppController.applicationDidFinishLaunching(notification: NSNotification);
 begin

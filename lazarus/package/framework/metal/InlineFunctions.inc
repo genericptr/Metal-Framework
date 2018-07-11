@@ -3,7 +3,7 @@
 function MTLOriginMake(x, y, z: NSUInteger): MTLOrigin; inline;
 function MTLSizeMake(width, height, depth: NSUInteger): MTLSize; inline;
 function MTLRegionMake1D(x, width: NSUInteger): MTLRegion; inline;
-function MMTLRegionMake2D(x, y, width, height: NSUInteger): MTLRegion; inline;
+function MTLRegionMake2D(x, y, width, height: NSUInteger): MTLRegion; inline;
 function MTLRegionMake3D(x, y, z, width, height, depth: NSUInteger): MTLRegion; inline;
 function MTLSamplePositionMake (x, y: single): MTLSamplePosition; inline;
 function MTLClearColorMake (r, g, b, a: double): MTLClearColor; inline;
@@ -31,7 +31,7 @@ begin
 	result.size.width := width; result.size.height := 1; result.size.depth := 1;
 end;
 
-function MMTLRegionMake2D(x, y, width, height: NSUInteger): MTLRegion;
+function MTLRegionMake2D(x, y, width, height: NSUInteger): MTLRegion;
 begin
   result.origin.x := x; result.origin.y := y; result.origin.z := 0;
   result.size.width := width; result.size.height := height; result.size.depth := 1;

@@ -151,9 +151,11 @@ begin
 
 	MTLSetClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
 
-	url := NSBundle.mainBundle.URLForResource_withExtension(NSSTR('Image'), NSSTR('tga'));
-	image := LoadTGAFile(url.relativePath.UTF8String);
-	texture := MTLLoadTexture(image.bytes, image.width, image.height);
+	texture := MTLLoadTexture(ResourcePath('Image', 'tga'));
+	
+	//url := NSBundle.mainBundle.URLForResource_withExtension(NSSTR('Image'), NSSTR('tga'));
+	//image := LoadTGAFile(url.relativePath.UTF8String);
+	//texture := MTLLoadTexture(image.bytes, image.width, image.height);
 end;
 
 end.

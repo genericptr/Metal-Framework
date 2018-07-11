@@ -5,8 +5,8 @@ unit MTKRenderer_HelloTriangle;
 interface
 uses
 	SIMDTypes, TGALoader,
-	Metal, MetalKit, MetalUtils,
-	CocoaAll, MacOSAll, SysUtils;
+	MetalPipeline, Metal, MetalKit, MetalUtils,
+	MacOSAll, CocoaAll, SysUtils;
 
 type
 	TMTKRenderer = objcclass (NSObject, MTKViewDelegateProtocol)
@@ -22,6 +22,7 @@ type
 			viewport: MTLViewport;
 
 			procedure drawTriangle; message 'drawTriangle';
+			procedure takeScreenshot; message 'takeScreenshot';
 
 			procedure dealloc; override;
 
@@ -71,64 +72,16 @@ end;
 // https://forums.developer.apple.com/thread/65037
 // https://stackoverflow.com/questions/33844130/take-a-snapshot-of-current-screen-with-metal-in-swift
 
-(*
+type
+  CAMetalDrawableProtocol = objcprotocol external name 'CAMetalDrawable' (NSObjectProtocol)
+  	function layer: id{CAMetalLayer}; message 'layer';
+  	function texture: MTLTextureProtocol; message 'texture';
+  end;
 
-import Metal
-import MetalKit
-import Cocoa
-
-let device = MTLCreateSystemDefaultDevice()!
-let textureLoader = MTKTextureLoader(device: device)
-
-// PATH TO YOUR IMAGE FILE
-let path = "/Users/haawa799/Desktop/Metal_Snapshot.playground/Resources/q.jpg"
-let data = NSData(contentsOfFile: path)!
-
-let texture = try! textureLoader.newTextureWithData(data, options: nil)
-
-extension MTLTexture {
-
-  func bytes() -> UnsafeMutablePointer<Void> {
-    let width = self.width
-    let height   = self.height
-    let rowBytes = self.width * 4
-    let p = malloc(width * height * 4)
-
-    self.getBytes(p, bytesPerRow: rowBytes, fromRegion: MTLRegionMake2D(0, 0, width, height), mipmapLevel: 0)
-
-    return p
-  }
-
-  func toImage() -> CGImage? {
-    let p = bytes()
-
-    let pColorSpace = CGColorSpaceCreateDeviceRGB()
-
-    let rawBitmapInfo = CGImageAlphaInfo.NoneSkipFirst.rawValue | CGBitmapInfo.ByteOrder32Little.rawValue
-    let bitmapInfo:CGBitmapInfo = CGBitmapInfo(rawValue: rawBitmapInfo)
-
-    let selftureSize = self.width * self.height * 4
-    let rowBytes = self.width * 4
-    let provider = CGDataProviderCreateWithData(nil, p, selftureSize, nil)
-    let cgImageRef = CGImageCreate(self.width, self.height, 8, 32, rowBytes, pColorSpace, bitmapInfo, provider, nil, true, CGColorRenderingIntent.RenderingIntentDefault)!
-
-    return cgImageRef
-  }
-}
-
-if let imageRef = texture.toImage() {
-  let image = NSImage(CGImage: imageRef, size: NSSize(width: texture.width, height: texture.height))
-
-*)
-
-procedure SaveImage(view: MTKView; path: pchar);
-var
-  texture: MTLTextureProtocol;
-begin  
-	texture := view.currentDrawable.texture;
-	show(texture);
-
-end;
+type
+	CAMetalLayer = objccategory external (CALayer)
+  	function nextDrawable: CAMetalDrawableProtocol; message 'nextDrawable';
+	end;
 
 procedure TMTKRenderer.drawTriangle;
 var
@@ -137,6 +90,9 @@ var
 	commandBuffer: MTLCommandBufferProtocol;
 	renderPassDescriptor: MTLRenderPassDescriptor;
 	renderEncoder: MTLRenderCommandEncoderProtocol;
+	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
+	renderTextureDescriptor: MTLTextureDescriptor;
+	renderTexture: MTLTextureProtocol;
 begin
 	verticies[0] := AAPLVertex(V2(size, -size), V4(1, 0, 0, 1));
 	verticies[1] := AAPLVertex(V2(-size, -size), V4(0, 1, 0, 1 ));
@@ -147,6 +103,28 @@ begin
 	renderPassDescriptor := view.currentRenderPassDescriptor;
 	if renderPassDescriptor <> nil then
 		begin
+
+			// NOTE: integrating this into a frame is too messy to bother with
+			//renderTextureDescriptor := MTLTextureDescriptor.texture2DDescriptorWithPixelFormat_width_height_mipmapped(
+			//		view.currentDrawable.texture.pixelFormat,
+			//		view.currentDrawable.texture.width,
+			//		view.currentDrawable.texture.height,
+			//		false
+			//	);
+			//renderTextureDescriptor.setUsage(MTLTextureUsageRenderTarget);
+			//renderTextureDescriptor.setStorageMode(MTLStorageModeManaged);
+			//renderTextureDescriptor.setTextureType(MTLTextureType2D);
+			//renderTextureDescriptor.setCpuCacheMode(MTLResourceCPUCacheModeDefaultCache);
+
+			//renderTexture := view.device.newTextureWithDescriptor(renderTextureDescriptor);
+			//Fatal(renderTexture = nil, 'newTextureWithDescriptor failed');
+
+			//colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+			//colorAttachment.setTexture(renderTexture);
+			//colorAttachment.setClearColor(view.clearColor);
+			//colorAttachment.setStoreAction(MTLStoreActionStore);
+			//colorAttachment.setLoadAction(MTLLoadActionClear);
+
 			renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
 			renderEncoder.setRenderPipelineState(pipelineState);
 
@@ -161,14 +139,19 @@ begin
 		end;
 
 	commandBuffer.commit;
-
-	//SaveImage(view, 'metal-triangle.png');
-	//halt;
+	//commandBuffer.waitUntilCompleted;
 end;
 
 procedure TMTKRenderer.drawInMTKView (fromView: MTKView);
 begin
 	drawTriangle;
+end;
+
+procedure TMTKRenderer.takeScreenshot;
+begin
+	//view.draw;
+	//MTLWriteTextureToFile(renderTexture, 'metal-triangle.png');
+	//halt;
 end;
 
 procedure TMTKRenderer.dealloc;
@@ -193,6 +176,7 @@ begin
 	view := inView; // weak retain;
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
+
 
 	device := view.device;
 	Show(device, 'GPU:');

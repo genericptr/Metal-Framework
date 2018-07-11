@@ -595,6 +595,13 @@
                 <menuItem title="View" id="295">
                     <menu key="submenu" title="View" id="296">
                         <items>
+                            <menuItem title="Take Screenshot" keyEquivalent="s" id="aOZ-Fr-eVZ">
+                                <modifierMask key="keyEquivalentModifierMask" control="YES" command="YES"/>
+                                <connections>
+                                    <action selector="takeScreenshot:" target="-1" id="KX8-fP-ePB"/>
+                                </connections>
+                            </menuItem>
+                            <menuItem isSeparatorItem="YES" id="Il0-ZV-ibG"/>
                             <menuItem title="Show Toolbar" keyEquivalent="t" id="297">
                                 <modifierMask key="keyEquivalentModifierMask" option="YES" command="YES"/>
                                 <connections>
