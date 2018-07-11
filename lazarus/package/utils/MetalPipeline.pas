@@ -88,8 +88,8 @@ procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUIntege
 { Textures }
 function MTLLoadTexture (path: string): MTLTextureProtocol;
 function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
-procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar); overload;
-procedure MTLWriteTextureToFile(path: pchar); overload;
+procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
+procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
 
 { Buffers }
 function MTLNewBuffer (bytes: pointer; len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol; overload;
@@ -465,7 +465,7 @@ begin
 	result := texture;
 end;
 
-procedure MTLWriteTextureToFile(path: pchar);
+procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 	with CurrentThreadContext do begin
@@ -478,7 +478,7 @@ begin
 	end;
 end;
 
-procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar);
+procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
 var
   width, height, bytesPerRow, bytesCount: integer;
   bytes: pointer;
@@ -493,7 +493,6 @@ var
   finalImage: NSImage;
   imageData: NSData;
   imageRep: NSBitmapImageRep;
-  imageProps: NSDictionary;
 begin  
 	
 	Fatal(texture.pixelFormat <> MTLPixelFormatBGRA8Unorm, 'texture must be MTLPixelFormatBGRA8Unorm pixel format.');
@@ -535,7 +534,7 @@ begin
 	imageData := finalImage.TIFFRepresentation;
 	imageRep := NSBitmapImageRep.imageRepWithData(imageData);
 	//imageProps := NSDictionary.dictionaryWithObject_forKey(NSNumber.numberWithFloat(1), NSImageCompressionFactor);
-	imageData := imageRep.representationUsingType_properties(NSPNGFileType, nil);
+	imageData := imageRep.representationUsingType_properties(fileType, imageProps);
 	imageData.writeToFile_atomically(NSSTR(path), false);
 
 	CFRelease(provider);
