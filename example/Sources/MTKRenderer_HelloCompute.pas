@@ -54,6 +54,41 @@ begin
 	result.texCoord := texCoord;
 end;
 
+type
+	TBitmapImage = class
+		public
+			bytes: pointer;
+			width, height: integer;
+			bytesPerRow: integer;
+		private
+			image: NSImage;
+			rep: NSBitmapImageRep;
+		public
+			constructor Create (path: string);
+			destructor Destroy; override;
+	end;
+
+constructor TBitmapImage.Create (path: string);
+var
+	data: NSData;
+begin
+	image := NSImage.alloc.initWithContentsOfFile(NSSTR(path));
+	data := image.TIFFRepresentation;
+	rep := NSBitmapImageRep.imageRepWithData(data).retain;
+	bytes := rep.bitmapData;
+	width := trunc(image.size.width);
+	height := trunc(image.size.height);
+	bytesPerRow := rep.bytesPerRow;
+end;
+
+destructor TBitmapImage.Destroy;
+begin
+	rep.release;
+	image.release;
+
+	inherited;
+end;
+
 procedure TMTKRenderer.mtkView_drawableSizeWillChange (fromView: MTKView; size: CGSize);
 begin
 	viewportSize.x := Trunc(size.width);
@@ -107,41 +142,6 @@ begin
 	inherited dealloc;
 end;
 
-type
-	TBitmapImage = class
-		public
-			bytes: pointer;
-			width, height: integer;
-			bytesPerRow: integer;
-		private
-			image: NSImage;
-			rep: NSBitmapImageRep;
-		public
-			constructor Create (path: string);
-			destructor Destroy; override;
-	end;
-
-constructor TBitmapImage.Create (path: string);
-var
-	data: NSData;
-begin
-	image := NSImage.alloc.initWithContentsOfFile(NSSTR(path));
-	data := image.TIFFRepresentation;
-	rep := NSBitmapImageRep.imageRepWithData(data).retain;
-	bytes := rep.bitmapData;
-	width := trunc(image.size.width);
-	height := trunc(image.size.height);
-	bytesPerRow := rep.bytesPerRow;
-end;
-
-destructor TBitmapImage.Destroy;
-begin
-	rep.release;
-	image.release;
-
-	inherited;
-end;
-
 function TMTKRenderer.init (inView: MTKView): TMTKRenderer;
 var
 	error: NSError;
@@ -164,7 +164,7 @@ begin
 
 	// library
 	libraryOptions := TMetalLibraryOptions.Default;
-	libraryOptions.libraryName := ResourcePath('Compute', 'metallib');
+	libraryOptions.name := ResourcePath('Compute', 'metallib');
 	shaderLibrary := MTLCreateLibrary(libraryOptions);
 
 	// render shader

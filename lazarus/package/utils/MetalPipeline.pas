@@ -51,16 +51,15 @@ type
 
 type
 	TMetalLibraryOptions = record
-		libraryName: string;			// path to compiled .metallib file
-		shaderName: string;				// path to .metal shader file which will be compiled at runtime
+		name: string;			// path to compiled .metallib file OR .metal file which will be compiled at runtime
 		class function Default: TMetalLibraryOptions; static;
+		constructor Create (_name: string);
 	end;
 
 type
 	TMetalPipelineOptions = record
 
 		libraryName: string;					// path to compiled .metallib file
-		shaderName: string;						// path to .metal shader file which will be compiled at runtime
 		shaderLibrary: TMetalLibrary;	// metal library to locate shader functions
 
 		vertexShader: string;				// name of vertex function in shader file (see TMetalPipelineOptions.Default)
@@ -157,16 +156,19 @@ begin
 	result := NSString.stringWithCString_length(@str[1], length(str));
 end;
 
+constructor TMetalLibraryOptions.Create (_name: string);
+begin
+	name := _name;
+end;
+
 class function TMetalLibraryOptions.Default: TMetalLibraryOptions;
 begin
-	result.libraryName := '';
-	result.shaderName := '';
+	result.name := '';
 end;
 
 class function TMetalPipelineOptions.Default: TMetalPipelineOptions;
 begin
 	result.libraryName := '';
-	result.shaderName := '';
 	result.vertexShader := 'vertexShader';
 	result.fragmentShader := 'fragmentShader';
 	result.kernelFunction := '';
@@ -758,18 +760,22 @@ var
 	metalLibrary: TMetalLibrary;
 	error: NSError = nil;
 	device: MTLDeviceProtocol;
+	extension: string;
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 
 	device := CurrentThreadContext.device;
 	metalLibrary := TMetalLibrary.Create;
+	extension := ExtractFileExt(options.name);
 
-	if options.shaderName <> '' then
-		metalLibrary.lib := CompileShader(device, options.shaderName)
-	else if options.libraryName <> '' then
-		metalLibrary.lib := device.newLibraryWithFile_error(NSSTR(options.libraryName), @error)
-	else if options.libraryName = '' then
-		metalLibrary.lib := device.newDefaultLibrary;
+	if extension = '.metal' then
+		metalLibrary.lib := CompileShader(device, options.name)
+	else if extension = '.metallib' then
+		metalLibrary.lib := device.newLibraryWithFile_error(NSSTR(options.name), @error)
+	else if options.name = '' then
+		metalLibrary.lib := device.newDefaultLibrary
+	else
+		Fatal('invalid library name');
 
 	Fatal(metalLibrary.lib = nil, 'no metal shaders could be loaded.', error);
 	Show(metalLibrary.lib);
@@ -803,9 +809,7 @@ begin
 			// Load shader library
 			if options.shaderLibrary = nil then
 				begin
-					libraryOptions := TMetalLibraryOptions.Default;
-					libraryOptions.shaderName := options.shaderName;
-					libraryOptions.libraryName := options.libraryName;
+					libraryOptions := TMetalLibraryOptions.Create(options.libraryName);
 					shaderLibrary := MTLCreateLibrary(libraryOptions);
 				end
 			else
