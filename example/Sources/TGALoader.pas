@@ -35,6 +35,7 @@ type
 	TGAImage = record
 		bytes: pointer;
 		width, height: integer;
+		bytesPerRow: integer;
 		class operator Finalize(var a: TGAImage);
 	end;
 
@@ -136,6 +137,7 @@ begin
 
 	result.width := width;
 	result.height := height;
+	result.bytesPerRow := 4 * width;
 end;
 
 end.

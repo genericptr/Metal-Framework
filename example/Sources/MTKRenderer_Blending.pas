@@ -88,22 +88,21 @@ begin
 	vertices[5] := TexVertex(V2(size,   size),  V2(1, 1));
 
 	MTLBeginFrame;
-
+		
 		MTLSetFragmentTexture(texture, 0);
 		MTLSetVertexBytes(@vertices, sizeof(vertices), 0);
 		
 		MTLSetShader(defaultShader);
 			uniforms.modelMatrix := TMat4.Translate(200, 200, 0);
 			MTLSetVertexBytes(@uniforms, sizeof(uniforms), TWorldUniforms.Index);
-			MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
+		MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
 
 		MTLSetShader(blendShader);
 			uniforms.modelMatrix := TMat4.Translate(220, 220, 0);
 			MTLSetVertexBytes(@uniforms, sizeof(uniforms), TWorldUniforms.Index);
-			MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
+		MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
 
 	MTLEndFrame;
-
 end;
 
 procedure TMTKRenderer.dealloc;
@@ -121,9 +120,6 @@ var
 	error: NSError;
 	options: TMetalPipelineOptions;
 	libraryOptions: TMetalLibraryOptions;
-	i: integer;
-	image: TGAImage;
-	url: NSURL;
 begin
 	view := inView;
 	view.setDelegate(self);
@@ -152,10 +148,6 @@ begin
 	MTLSetClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
 
 	texture := MTLLoadTexture(ResourcePath('Image', 'tga'));
-	
-	//url := NSBundle.mainBundle.URLForResource_withExtension(NSSTR('Image'), NSSTR('tga'));
-	//image := LoadTGAFile(url.relativePath.UTF8String);
-	//texture := MTLLoadTexture(image.bytes, image.width, image.height);
 end;
 
 end.

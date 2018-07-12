@@ -4,7 +4,7 @@
 unit AppDelegate;
 interface
 uses
-	MTKRenderer_HelloTriangle,
+	//MTKRenderer_HelloTriangle,
 	//MTKRenderer_BasicBuffers,
 	//MTKRenderer_BasicTexturing,
 	//MTKRenderer_API,
@@ -12,6 +12,7 @@ uses
 	//MTKRenderer_DepthStencil,
 	//MTKRenderer_OBJ,
 	//MTKRenderer_Blending,
+	MTKRenderer_HelloCompute,
 	MetalKit, Metal, CocoaAll, MacOSAll;
 
 type
@@ -29,7 +30,7 @@ type
 implementation
 uses
 	MetalPipeline;
-	
+
 procedure TAppController.takeScreenshot (sender: id);
 begin
 	writeln('take screen shot');
