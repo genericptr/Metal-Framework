@@ -43,9 +43,11 @@ type
 
 		class function SharedContext: TMetalContext;
 
+		procedure SetPreferredFrameRate(newValue: integer);
 		procedure SetColorPixelFormat(pixelFormat: MTLPixelFormat);
 		procedure MakeCurrent;
-
+		procedure Draw;
+		
 		destructor Destroy; override;
 	end;
 
@@ -94,6 +96,7 @@ procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUIntege
 { Textures }
 function MTLLoadTexture (path: string): MTLTextureProtocol;
 function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
+
 procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
 procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
 
@@ -131,7 +134,6 @@ procedure MTLSetClearColor (clearColor: MTLClearColor; colorPixelFormat: MTLPixe
 procedure MTLSetDepthStencil (pipeline: TMetalPipeline; compareFunction: MTLCompareFunction = MTLCompareFunctionAlways; depthWriteEnabled: boolean = false; frontFaceStencil: MTLStencilDescriptor = nil; backFaceStencil: MTLStencilDescriptor = nil);
 
 { Creation }
-
 function MTLCreateContext (view: MTKView): TMetalContext;
 function MTLCreateLibrary (options: TMetalLibraryOptions): TMetalLibrary;
 function MTLCreatePipeline (options: TMetalPipelineOptions): TMetalPipeline;
@@ -187,6 +189,16 @@ end;
 class function TMetalContext.SharedContext: TMetalContext;
 begin
 	result := CurrentThreadContext;
+end;
+
+procedure TMetalContext.Draw;
+begin
+	view.draw
+end;
+
+procedure TMetalContext.SetPreferredFrameRate(newValue: integer);
+begin
+	view.setPreferredFramesPerSecond(newValue);
 end;
 
 procedure TMetalContext.SetColorPixelFormat(pixelFormat: MTLPixelFormat);
@@ -363,56 +375,15 @@ begin
 end;
 
 procedure MTLBeginFrame (pipeline: TMetalPipeline);
-//var
-//	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
-//	renderPassDescriptor: MTLRenderPassDescriptor;
 begin
 	MTLBeginCommand;
 	MTLBeginEncoding(pipeline);
-	//exit;
-
-	//Fatal(CurrentThreadContext = nil, kError_InvalidContext);
-
-	//with CurrentThreadContext do begin
-	//currentPipeline := pipeline;
-	//commandBuffer := commandQueue.commandBuffer;
-
-	//drawing := true;
-	//renderPassDescriptor := view.currentRenderPassDescriptor;
-	//Fatal(renderPassDescriptor = nil, 'views device is not set');
-
-	//// NOTE: MTKView does this for us
-	////colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-	////colorAttachment.setTexture(view.currentDrawable.texture);
-	////colorAttachment.setClearColor(view.clearColor);
-	////colorAttachment.setStoreAction(MTLStoreActionStore);
-	////colorAttachment.setLoadAction(MTLLoadActionClear);
-
-	//// NOTE: depthAttachment is set automatically by the MTKView
-	////show(renderPassDescriptor.depthAttachment);
-
-	//renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
-	//end;
 end;
 
 procedure MTLEndFrame;
 begin
 	MTLEndEncoding;
 	MTLEndCommand;
-	//exit;
-
-	//with CurrentThreadContext do begin
-	//Fatal(renderEncoder = nil);
-
-	//renderEncoder.endEncoding;
-
-	//commandBuffer.presentDrawable(CurrentThreadContext.view.currentDrawable);
-	//commandBuffer.commit;
-
-	//commandBuffer := nil;
-	//renderEncoder := nil;
-	//drawing := false;
-	//end;
 end;
 
 procedure MTLBeginEncoding (pipeline: TMetalPipeline);
@@ -438,7 +409,7 @@ begin
 
 			renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
 
-			// NOTE: this is called in MTLDraw right?
+			// NOTE: this is called in MTLDraw so multiple shader can be used inside Begin/EndFrame calls
 			//if currentPipeline <> nil then
 			//	begin
 			//		renderEncoder.setRenderPipelineState(currentPipeline.renderPipelineState);

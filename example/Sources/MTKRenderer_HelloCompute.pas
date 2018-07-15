@@ -113,7 +113,7 @@ begin
 	vertices[3] := AAPLVertex(V2(size,  -size),  V2(1.0, 0.0));
 	vertices[4] := AAPLVertex(V2(-size,   size), V2(0.0, 1.0));
 	vertices[5] := AAPLVertex(V2(size,   size),  V2(1.0, 1.0));
-
+	
 	MTLBeginCommand;
 
 		MTLBeginEncoding(computeShader);
@@ -160,6 +160,7 @@ begin
 	// context
 	context := MTLCreateContext(view);
 	context.SetColorPixelFormat(MTLPixelFormatBGRA8Unorm_sRGB);
+	context.SetPreferredFrameRate(0);
 	context.MakeCurrent;
 
 	// library
@@ -204,6 +205,8 @@ begin
 	threadgroupCount.width  := (inputTexture.width  + threadgroupSize.width -  1) div threadgroupSize.width;
 	threadgroupCount.height := (inputTexture.height + threadgroupSize.height - 1) div threadgroupSize.height;
 	threadgroupCount.depth := 1;
+
+	context.Draw;
 end;
 
 end.

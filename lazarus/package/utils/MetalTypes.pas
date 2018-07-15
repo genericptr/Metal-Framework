@@ -148,6 +148,7 @@ type
 			constructor Ortho(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
 			constructor OrthoGL(const Left,Right,Bottom,Top,zNear,zFar:TScalar);
 			constructor Perspective (const fovy,Aspect,zNear,zFar:TScalar);
+			constructor PerspectiveGL(const fovy,Aspect,zNear,zFar:TScalar);
 			constructor LookAt (constref Eye,Center,Up:TVec3);
 			
 			function Inverse:TMat4; inline;
@@ -934,8 +935,41 @@ begin
 	m[3,3]:=1.0;  
 end;
 
-// NOTE: wrong clip space for metal!
 constructor TMat4.Perspective(const fovy,Aspect,zNear,zFar:TScalar);
+//var Sine,Cotangent,ZDelta,Radians:TScalar;
+//begin
+// Radians:=(fovy*0.5)*DEG2RAD;
+// ZDelta:=zFar-zNear;
+// Sine:=sin(Radians);
+// if not ((ZDelta=0) or (Sine=0) or (aspect=0)) then begin
+//  Cotangent:=cos(Radians)/Sine;
+//  m:=Matrix4x4Identity.m;
+//  m[0,0]:=Cotangent/aspect;
+//  m[1,1]:=Cotangent;
+//  m[2,2]:=(-(zFar+zNear))/ZDelta;
+//  m[2,3]:=-1-0;
+//  m[3,2]:=(-(2.0*zNear*zFar))/ZDelta;
+//  m[3,3]:=0.0;
+// end;
+//end;
+var Sine,Cotangent,ZDelta,Radians:TScalar;
+begin
+ Radians:=(fovy*0.5)*DEG2RAD;
+ ZDelta:=zFar-zNear;
+ Sine:=sin(Radians);
+ if not ((ZDelta=0) or (Sine=0) or (aspect=0)) then begin
+  Cotangent:=cos(Radians)/Sine;
+  m:= Matrix4x4Identity.m;
+  m[0,0]:=Cotangent/aspect;
+  m[1,1]:=Cotangent;
+  m[2,2]:=(-zFar)/ZDelta;
+  m[2,3]:=-1;
+  m[3,2]:=(-(zNear*zFar))/ZDelta;
+  m[3,3]:=0.0;
+ end;
+end; 
+
+constructor TMat4.PerspectiveGL(const fovy,Aspect,zNear,zFar:TScalar);
 var Sine,Cotangent,ZDelta,Radians:TScalar;
 begin
  Radians:=(fovy*0.5)*DEG2RAD;

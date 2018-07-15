@@ -38,10 +38,12 @@ type
 			viewport: MTLViewport;
 		public
 			constructor Create(AOwner: TComponent); override;
+			procedure SetPreferredFrameRate(newValue: integer);
 		protected
 			procedure RealizeBounds; override;
 			procedure CreateWnd; override;
 			procedure DestroyWnd; override;
+			procedure Invalidate; override;
 		protected
 			procedure Paint; virtual;
 			procedure Prepare; virtual;
@@ -126,6 +128,11 @@ begin
   SetInitialBounds(0, 0, 200, 200);
 end;
 
+procedure TMetalBaseControl.SetPreferredFrameRate(newValue: integer);
+begin
+	context.SetPreferredFrameRate(newValue);
+end;
+
 procedure TMetalBaseControl.LoadMetal;
 var
  	superview: NSView; 
@@ -143,7 +150,7 @@ begin
 		end;
 
 	context := MTLCreateContext(renderView);
-	MTLMakeContextCurrent(context);
+	context.MakeCurrent;
 
 	// add render view to TWinControl view handle
 	superview := NSView(Handle);
@@ -186,6 +193,13 @@ begin
 	context.Free;
 
 	inherited;
+end;
+
+procedure TMetalBaseControl.Invalidate;
+begin
+	inherited;
+
+	renderView.draw;
 end;
 
 procedure TMetalBaseControl.Prepare;

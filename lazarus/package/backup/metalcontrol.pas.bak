@@ -6,7 +6,7 @@ unit MetalControl;
 interface
 
 uses
-	MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
+	MetalTypes, MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
   Classes, SysUtils, 
   LResources,
   Forms, Controls, Graphics, Dialogs;
@@ -38,15 +38,18 @@ type
 			viewport: MTLViewport;
 		public
 			constructor Create(AOwner: TComponent); override;
+			procedure SetPreferredFrameRate(newValue: integer);
 		protected
 			procedure RealizeBounds; override;
 			procedure CreateWnd; override;
 			procedure DestroyWnd; override;
+			procedure Invalidate; override;
 		protected
 			procedure Paint; virtual;
 			procedure Prepare; virtual;
 		private
 			renderer: TMTKRenderer;
+			context: TMetalContext;
 			procedure LoadMetal;
 	end;
 
@@ -54,7 +57,6 @@ type
   TMetalControl = class(TMetalBaseControl)
   published
     property Align;
-    property Alignment;
     property Anchors;
     property AutoSize;
     property BorderSpacing;
@@ -83,7 +85,7 @@ type
   	property OnMouseWheelUp;
   end;
 
-function MTLCreatePipeline (control: TMetalControl; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline; overload; inline;
+function MTLCreateContext (control: TMetalControl): TMetalContext; overload; inline;
 
 procedure Register;
 
@@ -93,9 +95,9 @@ implementation
 {@! ___UTILS___ } 
 {=============================================}
 
-function MTLCreatePipeline (control: TMetalControl; options: TMetalPipelineOptionsPtr = nil): TMetalPipeline; overload; inline;
+function MTLCreateContext (control: TMetalControl): TMetalContext;
 begin
-	result := MTLCreatePipeline(control.renderView, options);
+	result := MTLCreateContext(control.renderView);
 end;
 
 {=============================================}
@@ -126,6 +128,11 @@ begin
   SetInitialBounds(0, 0, 200, 200);
 end;
 
+procedure TMetalBaseControl.SetPreferredFrameRate(newValue: integer);
+begin
+	context.SetPreferredFrameRate(newValue);
+end;
+
 procedure TMetalBaseControl.LoadMetal;
 var
  	superview: NSView; 
@@ -135,15 +142,15 @@ begin
 	// NOTE: do we own this??
 	device := MTLCreateSystemDefaultDevice;
 	renderView := MTKView.alloc.initWithFrame_device(CGRectMake(0, 0, 0, 0), device);
-
-	// device is retained by MTKView so we can release now
-	device.release;
-
+	
 	if renderView.device = nil then
 		begin
 			writeln('metal is not supported on this device');
 			halt;
 		end;
+
+	context := MTLCreateContext(renderView);
+	context.MakeCurrent;
 
 	// add render view to TWinControl view handle
 	superview := NSView(Handle);
@@ -154,6 +161,7 @@ begin
 	// create objc class for render delegate
 	renderer := TMTKRenderer.alloc.init(self);
 	renderView.setDelegate(renderer);
+	//renderView.setPreferredFramesPerSecond(60);
 
 	// let the user setup the pipeline now that metal is loaded
 	Prepare;
@@ -183,8 +191,17 @@ end;
 procedure TMetalBaseControl.DestroyWnd;
 begin
 	renderer.release;	
+	context.Free;
 
 	inherited;
+end;
+
+procedure TMetalBaseControl.Invalidate;
+begin
+	inherited;
+
+	writeln('invalidate');
+	renderView.draw;
 end;
 
 procedure TMetalBaseControl.Prepare;
