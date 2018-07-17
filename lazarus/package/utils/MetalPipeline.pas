@@ -94,6 +94,8 @@ procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; i
 procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 
 { Textures }
+function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat): MTLTextureProtocol; overload;
+
 function MTLLoadTexture (path: string): MTLTextureProtocol;
 function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
 
@@ -118,7 +120,7 @@ procedure MTLSetFrontFacingWinding (winding: MTLWinding);
 { Compute }
 procedure MTLBeginCommand;
 procedure MTLEndCommand;
-procedure MTLBeginEncoding (pipeline: TMetalPipeline);
+procedure MTLBeginEncoding (pipeline: TMetalPipeline; targetTexture: MTLTextureProtocol = nil);
 procedure MTLEndEncoding;
 
 procedure MTLSetBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
@@ -386,9 +388,10 @@ begin
 	MTLEndCommand;
 end;
 
-procedure MTLBeginEncoding (pipeline: TMetalPipeline);
+procedure MTLBeginEncoding (pipeline: TMetalPipeline; targetTexture: MTLTextureProtocol = nil);
 var
 	renderPassDescriptor: MTLRenderPassDescriptor;
+	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 	with CurrentThreadContext do begin
@@ -397,12 +400,22 @@ begin
 		begin
 			renderPassDescriptor := view.currentRenderPassDescriptor;
 
-			// NOTE: MTKView does this for us
-			//colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-			//colorAttachment.setTexture(view.currentDrawable.texture);
-			//colorAttachment.setClearColor(view.clearColor);
-			//colorAttachment.setStoreAction(MTLStoreActionStore);
-			//colorAttachment.setLoadAction(MTLLoadActionClear);
+			if targetTexture <> nil then
+				begin
+					colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+					colorAttachment.setTexture(targetTexture);
+					//colorAttachment.setClearColor(view.clearColor);
+					//colorAttachment.setStoreAction(MTLStoreActionStore);
+					//colorAttachment.setLoadAction(MTLLoadActionClear);
+				end
+			else
+				begin
+					colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+					colorAttachment.setTexture(view.currentDrawable.texture);
+					//colorAttachment.setClearColor(view.clearColor);
+					//colorAttachment.setStoreAction(MTLStoreActionStore);
+					//colorAttachment.setLoadAction(MTLLoadActionClear);
+				end;
 
 			// NOTE: depthAttachment is set automatically by the MTKView
 			//show(renderPassDescriptor.depthAttachment);
@@ -601,15 +614,21 @@ begin
 	texture := device.newTextureWithDescriptor(textureDescriptor);
 	Fatal(texture = nil, 'newTextureWithDescriptor failed');
 
-	bytesPerRow := bytesPerComponent * width;
+	if bytes <> nil then
+		begin
+			bytesPerRow := bytesPerComponent * width;
+			region := MTLRegionMake3D(0, 0, 0, width, height, 1);
+			texture.replaceRegion_mipmapLevel_withBytes_bytesPerRow(region, 0, bytes, bytesPerRow);
+		end;
 
-	region := MTLRegionMake3D(0, 0, 0, width, height, 1);
-
-	texture.replaceRegion_mipmapLevel_withBytes_bytesPerRow(region, 0, bytes, bytesPerRow);
-	//show(texture);
 	end;
 
 	result := texture;
+end;
+
+function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat): MTLTextureProtocol;
+begin
+	result := MTLLoadTexture(nil, width, height, textureType, pixelFormat);
 end;
 
 procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
@@ -637,7 +656,6 @@ var
   imageData: NSData;
   imageRep: NSBitmapImageRep;
 begin  
-	
 	Fatal(texture.pixelFormat <> MTLPixelFormatBGRA8Unorm, 'texture must be MTLPixelFormatBGRA8Unorm pixel format.');
 
 	// read bytes
@@ -686,6 +704,7 @@ begin
 	CFRelease(provider);
 	CFRelease(imageRef);
 	CFRelease(colorSpace);
+	finalImage.release;
 end;
 
 procedure MTLMakeContextCurrent (context: TMetalContext);

@@ -131,7 +131,7 @@ begin
 
 	// library
 	libraryOptions := TMetalLibraryOptions.Default;
-	libraryOptions.libraryName := ResourcePath('Blending', 'metallib');
+	libraryOptions.name := ResourcePath('Blending', 'metallib');
 	shaderLibrary := MTLCreateLibrary(libraryOptions);
 
 	// shaders

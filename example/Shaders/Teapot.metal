@@ -1,4 +1,5 @@
 #include <metal_stdlib>
+#include <metal_matrix>
 
 using namespace metal;
 
@@ -7,13 +8,12 @@ struct MeshVertex {
 	float3 color;
 	float2 texCoord;
 	float3 normal;
-	// float3 tangent;
 };
 
 struct VertexOut {
 	float4 position [[position]];
 	float3 normal;
-	float3 color;
+	float depth;
 	float3 toLight;
 	float3 toCamera;
 };
@@ -23,6 +23,13 @@ struct Uniforms {
 	float4x4 projectionMatrix;
 	float4x4 invertedModelMatrix;
 	float4 lightPos;
+};
+
+struct WorldUniforms {
+	float shineDamper;
+	float reflectivity;
+	float3 lightColor;
+	int mode;
 };
 
 vertex VertexOut vertexShader(  unsigned int vertexID               		[[ vertex_id ]],
@@ -44,33 +51,35 @@ vertex VertexOut vertexShader(  unsigned int vertexID               		[[ vertex_
 	vertexOut.normal = normalize((modelMatrix * normal).xyz);
 	vertexOut.toLight = normalize(uniforms->lightPos.xyz - worldPosition.xyz);
 	vertexOut.toCamera = normalize((uniforms->invertedModelMatrix * float4(0, 0, 0, 1)).xyz - worldPosition.xyz);
-	vertexOut.color = float3(position.z, position.z, position.z);
+	vertexOut.depth = position.z;
 
 	return vertexOut;
 }
 
-fragment float4 fragmentShader(VertexOut vertexOut [[stage_in]])
+fragment float4 fragmentShader(	VertexOut vertexOut 													[[ stage_in ]],
+																const device WorldUniforms* worldUniforms    	[[ buffer(0) ]]
+																)
 {
-
-		// TODO: these should be frag uniforms
-		const float shineDamper = 3;
-		const float reflectivity = 1;
-		const float3 lightColor = float3(1, 1, 1);
-
     float brightness = dot(vertexOut.toLight, vertexOut.normal);
     brightness = max(brightness, 0.0);
-    float3 diffuse = lightColor * brightness;
+    float3 diffuse = worldUniforms->lightColor.xyz * brightness;
 
     float3 lightDirection = -vertexOut.toLight;
     float3 reflectedDirection = reflect(lightDirection, vertexOut.normal);
     float specular = dot(reflectedDirection, vertexOut.toCamera);
     specular = max(specular, 0.0);
-    float damper = pow(specular, shineDamper);
-    float3 specularColor = damper * reflectivity * lightColor;
+    float damper = pow(specular, worldUniforms->shineDamper);
+    float3 specularColor = damper * worldUniforms->reflectivity * worldUniforms->lightColor.xyz;
 
-	  // float4 fragColor = float4(diffuse, 1) * float4(0.3, 0.8, 0.2, 1) + float4(specularColor, 1);
-	  // float4 fragColor = float4(vertexOut.normal, 1) * 3;
-	  float4 fragColor = float4(vertexOut.color, 1);
+    float4 fragColor;
+
+    if (worldUniforms->mode == 0) {
+			fragColor = float4(diffuse, 1) * float4(0.3, 0.8, 0.2, 1) + float4(specularColor, 1);	
+    } else if (worldUniforms->mode == 1) {
+		  fragColor = float4(vertexOut.depth, vertexOut.depth, vertexOut.depth, 1);
+    } else {
+    	fragColor = float4(1, 0, 0, 1);
+    }
 
     return fragColor;
 }

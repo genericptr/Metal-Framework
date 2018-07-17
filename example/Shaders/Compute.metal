@@ -120,7 +120,7 @@ constant half3 kRec709Luma = half3(0.2126, 0.7152, 0.0722);
 kernel void
 grayscaleKernel(texture2d<half, access::read>  inTexture  [[texture(AAPLTextureIndexInput)]],
                 texture2d<half, access::write> outTexture [[texture(AAPLTextureIndexOutput)]],
-                uint2                          gid         [[thread_position_in_grid]])
+                uint2                          gid        [[thread_position_in_grid]])
 {
     // Check if the pixel is within the bounds of the output texture
     if((gid.x >= outTexture.get_width()) || (gid.y >= outTexture.get_height()))
