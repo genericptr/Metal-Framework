@@ -13,7 +13,8 @@ uses
 	//MTKRenderer_OBJ,
 	//MTKRenderer_Blending,
 	//MTKRenderer_HelloCompute,
-	MTKRenderer_FBO,
+	//MTKRenderer_FBO,
+	MTKRenderer_FBO_2,
 	MetalKit, Metal, CocoaAll, MacOSAll;
 
 type

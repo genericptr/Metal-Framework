@@ -9,26 +9,29 @@ uses
 
 type
 	TMetalLibrary = class
+	public
 		lib: MTLLibraryProtocol;
 		functions: NSMutableDictionary;
-
+	public
 		function GetFunction (name: string): MTLFunctionProtocol;
 		destructor Destroy; override;
 	end;
 
 type
 	TMetalPipeline = class
+	public
 		renderPipelineState: MTLRenderPipelineStateProtocol;
 		computePipelineState: MTLComputePipelineStateProtocol;
 		depthStencilState: MTLDepthStencilStateProtocol;
 		shaderLibrary: TMetalLibrary;
-
+	public
 		destructor Destroy; override;
 	end;
 
 
 type
 	TMetalContext = class
+	public
 		view: MTKView;
 		device: MTLDeviceProtocol;
 		commandQueue: MTLCommandQueueProtocol;
@@ -40,7 +43,7 @@ type
 		renderEncoder: MTLRenderCommandEncoderProtocol;
 		computeEncoder: MTLComputeCommandEncoderProtocol;
 		drawing: boolean;
-
+	public
 		class function SharedContext: TMetalContext;
 
 		procedure SetPreferredFrameRate(newValue: integer);
@@ -53,23 +56,17 @@ type
 
 type
 	TMetalLibraryOptions = record
+	public
 		name: string;			// path to compiled .metallib file OR .metal file which will be compiled at runtime
+	public
 		class function Default: TMetalLibraryOptions; static;
 		constructor Create (_name: string);
 	end;
 
 type
-	TMetalPipelineOptions = record
-
-		libraryName: string;					// path to compiled .metallib file
-		shaderLibrary: TMetalLibrary;	// metal library to locate shader functions
-
-		vertexShader: string;				// name of vertex function in shader file (see TMetalPipelineOptions.Default)
-		fragmentShader: string;			// name of fragment function in shader file (see TMetalPipelineOptions.Default)
-		kernelFunction: string;
-		vertexDescriptor: MTLVertexDescriptor;
-
-		// blending modes
+	TMetalPipelineColorAttachment = record
+	public
+		pixelFormat: MTLPixelFormat;
 		blendingEnabled: boolean;
 		sourceRGBBlendFactor: MTLBlendFactor;
 		destinationRGBBlendFactor: MTLBlendFactor;
@@ -77,8 +74,26 @@ type
 		sourceAlphaBlendFactor: MTLBlendFactor;
 		destinationAlphaBlendFactor: MTLBlendFactor;
 		alphaBlendOperation: MTLBlendOperation;
+	public
+		constructor Create (_pixelFormat: MTLPixelFormat);
+	end;
 
+type
+	TMetalPipelineOptions = record
+	public
+		libraryName: string;					// path to compiled .metallib file
+		shaderLibrary: TMetalLibrary;	// metal library to locate shader functions
+
+		vertexShader: string;				// name of vertex function in shader file (see TMetalPipelineOptions.Default)
+		fragmentShader: string;			// name of fragment function in shader file (see TMetalPipelineOptions.Default)
+		kernelFunction: string;
+		vertexDescriptor: MTLVertexDescriptor;
+		pipelineStateDescriptor: MTLRenderPipelineDescriptor;
+
+		colorAttachments: array of TMetalPipelineColorAttachment;
+	public
 		class function Default: TMetalPipelineOptions; static;
+		procedure SetColorAttachments (count: integer);
 	end;
 
 { Drawing }
@@ -94,10 +109,15 @@ procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; i
 procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 
 { Textures }
-function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat): MTLTextureProtocol; overload;
+function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat; usage: MTLTextureUsage): MTLTextureProtocol;
 
 function MTLLoadTexture (path: string): MTLTextureProtocol;
-function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
+function MTLLoadTexture (	bytes: pointer; 
+													width, height: integer; textureType: MTLTextureType = MTLTextureType2D; 
+													pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; 
+													bytesPerComponent: integer = 4;
+													usage: MTLTextureUsage = MTLTextureUsageShaderRead
+													): MTLTextureProtocol;
 
 procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
 procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
@@ -120,7 +140,7 @@ procedure MTLSetFrontFacingWinding (winding: MTLWinding);
 { Compute }
 procedure MTLBeginCommand;
 procedure MTLEndCommand;
-procedure MTLBeginEncoding (pipeline: TMetalPipeline; targetTexture: MTLTextureProtocol = nil);
+procedure MTLBeginEncoding (pipeline: TMetalPipeline; renderPassDescriptor: MTLRenderPassDescriptor = nil);
 procedure MTLEndEncoding;
 
 procedure MTLSetBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
@@ -142,6 +162,12 @@ function MTLCreatePipeline (options: TMetalPipelineOptions): TMetalPipeline;
 
 procedure MTLMakeContextCurrent (context: TMetalContext);
 
+{ Categories }
+type
+	MTLRenderPassDescriptorHelper = objccategory (MTLRenderPassDescriptor)
+		function colorAttachmentAtIndex(index: integer): MTLRenderPassColorAttachmentDescriptor; message 'colorAttachmentAtIndex:';
+	end;
+
 implementation
 uses
 	MacOSAll,
@@ -155,10 +181,38 @@ const
 threadvar
 	CurrentThreadContext: TMetalContext;
 
+{=============================================}
+{@! ___UTILS___ } 
+{=============================================}
+
 function NSSTR(str: string): NSString; overload;
 begin
 	result := NSString.stringWithCString_length(@str[1], length(str));
 end;
+
+function MTLRenderPassDescriptorHelper.colorAttachmentAtIndex(index: integer): MTLRenderPassColorAttachmentDescriptor;
+begin
+	result := self.colorAttachments.objectAtIndexedSubscript(index);
+end;
+
+constructor TMetalPipelineColorAttachment.Create(_pixelFormat: MTLPixelFormat);
+begin
+	//FillChar(self, sizeof(self));
+
+	blendingEnabled := false;
+	sourceRGBBlendFactor := MTLBlendFactorOne;
+	destinationRGBBlendFactor := MTLBlendFactorZero;
+	rgbBlendOperation := MTLBlendOperationAdd;
+	sourceAlphaBlendFactor := MTLBlendFactorOne;
+	destinationAlphaBlendFactor := MTLBlendFactorZero;
+	alphaBlendOperation := MTLBlendOperationAdd;
+
+	pixelFormat := _pixelFormat;
+end;
+
+{=============================================}
+{@! ___METAL LIBRARY OPTIONS___ } 
+{=============================================}
 
 constructor TMetalLibraryOptions.Create (_name: string);
 begin
@@ -170,6 +224,15 @@ begin
 	result.name := '';
 end;
 
+procedure TMetalPipelineOptions.SetColorAttachments (count: integer);
+var
+	i: integer;
+begin
+	SetLength(colorAttachments, count);
+	for i := 0 to count - 1 do
+		colorAttachments[i] := TMetalPipelineColorAttachment.Create(MTLPixelFormatInvalid);
+end;
+
 class function TMetalPipelineOptions.Default: TMetalPipelineOptions;
 begin
 	result.libraryName := '';
@@ -178,15 +241,13 @@ begin
 	result.kernelFunction := '';
 	result.vertexDescriptor := nil;
 	result.shaderLibrary := nil;
-
-	result.blendingEnabled := false;
-	result.sourceRGBBlendFactor := MTLBlendFactorOne;
-	result.destinationRGBBlendFactor := MTLBlendFactorZero;
-	result.rgbBlendOperation := MTLBlendOperationAdd;
-	result.sourceAlphaBlendFactor := MTLBlendFactorOne;
-	result.destinationAlphaBlendFactor := MTLBlendFactorZero;
-	result.alphaBlendOperation := MTLBlendOperationAdd;
+	result.pipelineStateDescriptor := nil;
+	result.colorAttachments := nil;
 end;
+
+{=============================================}
+{@! ___METAL CONTEXT___ } 
+{=============================================}
 
 class function TMetalContext.SharedContext: TMetalContext;
 begin
@@ -221,6 +282,10 @@ begin
 	inherited;
 end;
 
+{=============================================}
+{@! ___METAL LIBRARY___ } 
+{=============================================}
+
 function TMetalLibrary.GetFunction (name: string): MTLFunctionProtocol;
 var
 	func: MTLFunctionProtocol;
@@ -249,6 +314,10 @@ begin
 
 	inherited;
 end;
+
+{=============================================}
+{@! ___METAL PIPELINE___ } 
+{=============================================}
 
 destructor TMetalPipeline.Destroy;
 begin
@@ -388,47 +457,16 @@ begin
 	MTLEndCommand;
 end;
 
-procedure MTLBeginEncoding (pipeline: TMetalPipeline; targetTexture: MTLTextureProtocol = nil);
-var
-	renderPassDescriptor: MTLRenderPassDescriptor;
-	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
+procedure MTLBeginEncoding (pipeline: TMetalPipeline; renderPassDescriptor: MTLRenderPassDescriptor = nil);
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 	with CurrentThreadContext do begin
 	currentPipeline := pipeline;
 	if (pipeline = nil) or (pipeline.renderPipelineState <> nil) then
 		begin
-			renderPassDescriptor := view.currentRenderPassDescriptor;
-
-			if targetTexture <> nil then
-				begin
-					colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-					colorAttachment.setTexture(targetTexture);
-					//colorAttachment.setClearColor(view.clearColor);
-					//colorAttachment.setStoreAction(MTLStoreActionStore);
-					//colorAttachment.setLoadAction(MTLLoadActionClear);
-				end
-			else
-				begin
-					colorAttachment := renderPassDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-					colorAttachment.setTexture(view.currentDrawable.texture);
-					//colorAttachment.setClearColor(view.clearColor);
-					//colorAttachment.setStoreAction(MTLStoreActionStore);
-					//colorAttachment.setLoadAction(MTLLoadActionClear);
-				end;
-
-			// NOTE: depthAttachment is set automatically by the MTKView
-			//show(renderPassDescriptor.depthAttachment);
-
+			if renderPassDescriptor = nil then
+				renderPassDescriptor := view.currentRenderPassDescriptor;
 			renderEncoder := commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor);
-
-			// NOTE: this is called in MTLDraw so multiple shader can be used inside Begin/EndFrame calls
-			//if currentPipeline <> nil then
-			//	begin
-			//		renderEncoder.setRenderPipelineState(currentPipeline.renderPipelineState);
-			//		if currentPipeline.depthStencilState <> nil then
-			//			renderEncoder.setDepthStencilState(currentPipeline.depthStencilState);
-			//	end;
 		end
 	else if pipeline.computePipelineState <> nil then
 		begin
@@ -594,7 +632,12 @@ begin
 	end;
 end;
 
-function MTLLoadTexture (bytes: pointer; width, height: integer; textureType: MTLTextureType = MTLTextureType2D; pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; bytesPerComponent: integer = 4): MTLTextureProtocol;
+function MTLLoadTexture (	bytes: pointer; 
+													width, height: integer; textureType: MTLTextureType = MTLTextureType2D; 
+													pixelFormat: MTLPixelFormat = MTLPixelFormatBGRA8Unorm; 
+													bytesPerComponent: integer = 4;
+													usage: MTLTextureUsage = MTLTextureUsageShaderRead
+													): MTLTextureProtocol;
 var
 	imageFileLocation: NSURL;
 	textureDescriptor: MTLTextureDescriptor;
@@ -610,6 +653,7 @@ begin
 	textureDescriptor.setPixelFormat(pixelFormat);
 	textureDescriptor.setWidth(width);
 	textureDescriptor.setHeight(height);
+	textureDescriptor.setUsage(usage);
 
 	texture := device.newTextureWithDescriptor(textureDescriptor);
 	Fatal(texture = nil, 'newTextureWithDescriptor failed');
@@ -626,9 +670,9 @@ begin
 	result := texture;
 end;
 
-function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat): MTLTextureProtocol;
+function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat; usage: MTLTextureUsage): MTLTextureProtocol;
 begin
-	result := MTLLoadTexture(nil, width, height, textureType, pixelFormat);
+	result := MTLLoadTexture(nil, width, height, textureType, pixelFormat, 0, usage);
 end;
 
 procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
@@ -787,6 +831,8 @@ var
 	device: MTLDeviceProtocol;
 	view: MTKView;
 	libraryOptions: TMetalLibraryOptions;
+	i: integer;
+	a: TMetalPipelineColorAttachment;
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 
@@ -821,28 +867,42 @@ begin
 					fragmentFunction := shaderLibrary.GetFunction(options.fragmentShader);
 					Fatal(fragmentFunction = nil, 'fragment function not found.');
 
-					pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
+					if options.pipelineStateDescriptor <> nil then
+						pipelineStateDescriptor := options.pipelineStateDescriptor
+					else
+						begin
+							pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
+							pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
+							pipelineStateDescriptor.setVertexDescriptor(options.vertexDescriptor);
+
+							if options.colorAttachments <> nil then
+								begin
+									for i := 0 to high(options.colorAttachments) do
+										begin
+											a := options.colorAttachments[i];
+
+											colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(i);
+											colorAttachment.setPixelFormat(a.pixelFormat);
+											colorAttachment.setBlendingEnabled(a.blendingEnabled);
+											colorAttachment.setRgbBlendOperation(a.rgbBlendOperation);
+											colorAttachment.setAlphaBlendOperation(a.alphaBlendOperation);
+											colorAttachment.setSourceRGBBlendFactor(a.sourceRGBBlendFactor);
+											colorAttachment.setDestinationRGBBlendFactor(a.destinationRGBBlendFactor);
+											colorAttachment.setSourceAlphaBlendFactor(a.sourceAlphaBlendFactor);
+											colorAttachment.setDestinationAlphaBlendFactor(a.destinationAlphaBlendFactor);
+										end;
+								end
+							else
+								begin
+									// view frame buffer color attachment
+									colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+									colorAttachment.setPixelFormat(view.colorPixelFormat);
+								end;
+						end;
+
+					// always seting vertex/fragment function
 					pipelineStateDescriptor.setVertexFunction(vertexFunction);
 					pipelineStateDescriptor.setFragmentFunction(fragmentFunction);
-					pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
-					pipelineStateDescriptor.setVertexDescriptor(options.vertexDescriptor);
-
-					colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-					colorAttachment.setPixelFormat(view.colorPixelFormat);
-
-					if options.blendingEnabled then
-						begin
-							colorAttachment.setBlendingEnabled(true);
-
-							colorAttachment.setRgbBlendOperation(options.rgbBlendOperation);
-							colorAttachment.setAlphaBlendOperation(options.alphaBlendOperation);
-
-							colorAttachment.setSourceRGBBlendFactor(options.sourceRGBBlendFactor);
-							colorAttachment.setDestinationRGBBlendFactor(options.destinationRGBBlendFactor);
-
-							colorAttachment.setSourceAlphaBlendFactor(options.sourceAlphaBlendFactor);
-							colorAttachment.setDestinationAlphaBlendFactor(options.destinationAlphaBlendFactor);
-						end;
 
 					renderPipelineState := device.newRenderPipelineStateWithDescriptor_error(pipelineStateDescriptor, @error);
 
