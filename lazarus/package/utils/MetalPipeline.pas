@@ -64,21 +64,6 @@ type
 	end;
 
 type
-	TMetalPipelineColorAttachment = record
-	public
-		pixelFormat: MTLPixelFormat;
-		blendingEnabled: boolean;
-		sourceRGBBlendFactor: MTLBlendFactor;
-		destinationRGBBlendFactor: MTLBlendFactor;
-		rgbBlendOperation: MTLBlendOperation;
-		sourceAlphaBlendFactor: MTLBlendFactor;
-		destinationAlphaBlendFactor: MTLBlendFactor;
-		alphaBlendOperation: MTLBlendOperation;
-	public
-		constructor Create (_pixelFormat: MTLPixelFormat);
-	end;
-
-type
 	TMetalPipelineOptions = record
 	public
 		libraryName: string;					// path to compiled .metallib file
@@ -88,12 +73,9 @@ type
 		fragmentShader: string;			// name of fragment function in shader file (see TMetalPipelineOptions.Default)
 		kernelFunction: string;
 		vertexDescriptor: MTLVertexDescriptor;
-		pipelineStateDescriptor: MTLRenderPipelineDescriptor;
-
-		colorAttachments: array of TMetalPipelineColorAttachment;
+		pipelineDescriptor: MTLRenderPipelineDescriptor;
 	public
 		class function Default: TMetalPipelineOptions; static;
-		procedure SetColorAttachments (count: integer);
 	end;
 
 { Drawing }
@@ -162,10 +144,17 @@ function MTLCreatePipeline (options: TMetalPipelineOptions): TMetalPipeline;
 
 procedure MTLMakeContextCurrent (context: TMetalContext);
 
+function MTLCreatePipelineDescriptor: MTLRenderPipelineDescriptor;
+
 { Categories }
 type
 	MTLRenderPassDescriptorHelper = objccategory (MTLRenderPassDescriptor)
 		function colorAttachmentAtIndex(index: integer): MTLRenderPassColorAttachmentDescriptor; message 'colorAttachmentAtIndex:';
+	end;
+
+type
+	MTLRenderPipelineDescriptorHelper = objccategory (MTLRenderPipelineDescriptor)
+		function colorAttachmentAtIndex(index: integer): MTLRenderPipelineColorAttachmentDescriptor; message 'colorAttachmentAtIndex:';
 	end;
 
 implementation
@@ -190,24 +179,31 @@ begin
 	result := NSString.stringWithCString_length(@str[1], length(str));
 end;
 
+function MTLCreatePipelineDescriptor: MTLRenderPipelineDescriptor;
+var
+	pipelineStateDescriptor: MTLRenderPipelineDescriptor;
+	colorAttachment: MTLRenderPipelineColorAttachmentDescriptor;
+	view: MTKView;
+begin
+	view := CurrentThreadContext.view;
+
+	pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
+	pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
+
+	colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
+	colorAttachment.setPixelFormat(view.colorPixelFormat);
+
+	result := pipelineStateDescriptor;
+end;
+
 function MTLRenderPassDescriptorHelper.colorAttachmentAtIndex(index: integer): MTLRenderPassColorAttachmentDescriptor;
 begin
 	result := self.colorAttachments.objectAtIndexedSubscript(index);
 end;
 
-constructor TMetalPipelineColorAttachment.Create(_pixelFormat: MTLPixelFormat);
+function MTLRenderPipelineDescriptorHelper.colorAttachmentAtIndex(index: integer): MTLRenderPipelineColorAttachmentDescriptor;
 begin
-	//FillChar(self, sizeof(self));
-
-	blendingEnabled := false;
-	sourceRGBBlendFactor := MTLBlendFactorOne;
-	destinationRGBBlendFactor := MTLBlendFactorZero;
-	rgbBlendOperation := MTLBlendOperationAdd;
-	sourceAlphaBlendFactor := MTLBlendFactorOne;
-	destinationAlphaBlendFactor := MTLBlendFactorZero;
-	alphaBlendOperation := MTLBlendOperationAdd;
-
-	pixelFormat := _pixelFormat;
+	result := self.colorAttachments.objectAtIndexedSubscript(index);
 end;
 
 {=============================================}
@@ -224,15 +220,6 @@ begin
 	result.name := '';
 end;
 
-procedure TMetalPipelineOptions.SetColorAttachments (count: integer);
-var
-	i: integer;
-begin
-	SetLength(colorAttachments, count);
-	for i := 0 to count - 1 do
-		colorAttachments[i] := TMetalPipelineColorAttachment.Create(MTLPixelFormatInvalid);
-end;
-
 class function TMetalPipelineOptions.Default: TMetalPipelineOptions;
 begin
 	result.libraryName := '';
@@ -241,8 +228,7 @@ begin
 	result.kernelFunction := '';
 	result.vertexDescriptor := nil;
 	result.shaderLibrary := nil;
-	result.pipelineStateDescriptor := nil;
-	result.colorAttachments := nil;
+	result.pipelineDescriptor := nil;
 end;
 
 {=============================================}
@@ -824,7 +810,7 @@ var
 	kernelFunction: MTLFunctionProtocol = nil;
 
 	colorAttachment: MTLRenderPipelineColorAttachmentDescriptor;
-	pipelineStateDescriptor: MTLRenderPipelineDescriptor;
+	pipelineDescriptor: MTLRenderPipelineDescriptor;
 
 	error: NSError = nil;
 	pipeline: TMetalPipeline;
@@ -832,7 +818,6 @@ var
 	view: MTKView;
 	libraryOptions: TMetalLibraryOptions;
 	i: integer;
-	a: TMetalPipelineColorAttachment;
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 
@@ -867,44 +852,23 @@ begin
 					fragmentFunction := shaderLibrary.GetFunction(options.fragmentShader);
 					Fatal(fragmentFunction = nil, 'fragment function not found.');
 
-					if options.pipelineStateDescriptor <> nil then
-						pipelineStateDescriptor := options.pipelineStateDescriptor
+					if options.pipelineDescriptor <> nil then
+						pipelineDescriptor := options.pipelineDescriptor
 					else
 						begin
-							pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
-							pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
-							pipelineStateDescriptor.setVertexDescriptor(options.vertexDescriptor);
-
-							if options.colorAttachments <> nil then
-								begin
-									for i := 0 to high(options.colorAttachments) do
-										begin
-											a := options.colorAttachments[i];
-
-											colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(i);
-											colorAttachment.setPixelFormat(a.pixelFormat);
-											colorAttachment.setBlendingEnabled(a.blendingEnabled);
-											colorAttachment.setRgbBlendOperation(a.rgbBlendOperation);
-											colorAttachment.setAlphaBlendOperation(a.alphaBlendOperation);
-											colorAttachment.setSourceRGBBlendFactor(a.sourceRGBBlendFactor);
-											colorAttachment.setDestinationRGBBlendFactor(a.destinationRGBBlendFactor);
-											colorAttachment.setSourceAlphaBlendFactor(a.sourceAlphaBlendFactor);
-											colorAttachment.setDestinationAlphaBlendFactor(a.destinationAlphaBlendFactor);
-										end;
-								end
-							else
-								begin
-									// view frame buffer color attachment
-									colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-									colorAttachment.setPixelFormat(view.colorPixelFormat);
-								end;
+							pipelineDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
+							pipelineDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
+							pipelineDescriptor.setVertexDescriptor(options.vertexDescriptor);
+							
+							// default color attachment
+							pipelineDescriptor.colorAttachmentAtIndex(0).setPixelFormat(view.colorPixelFormat);
 						end;
 
 					// always seting vertex/fragment function
-					pipelineStateDescriptor.setVertexFunction(vertexFunction);
-					pipelineStateDescriptor.setFragmentFunction(fragmentFunction);
+					pipelineDescriptor.setVertexFunction(vertexFunction);
+					pipelineDescriptor.setFragmentFunction(fragmentFunction);
 
-					renderPipelineState := device.newRenderPipelineStateWithDescriptor_error(pipelineStateDescriptor, @error);
+					renderPipelineState := device.newRenderPipelineStateWithDescriptor_error(pipelineDescriptor, @error);
 
 					Fatal(renderPipelineState = nil, 'pipeline creation failed.', error);
 				end;

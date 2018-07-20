@@ -142,10 +142,9 @@ begin
 	options := TMetalPipelineOptions.Default;
 	options.shaderLibrary := shaderLibrary;
 
-	options.SetColorAttachments(1);
-	options.colorAttachments[0].pixelFormat := view.colorPixelFormat;
-	options.colorAttachments[0].blendingEnabled := true;
-	options.colorAttachments[0].destinationRGBBlendFactor := MTLBlendFactorOneMinusDestinationColor;
+	options.pipelineDescriptor := MTLCreatePipelineDescriptor;
+	options.pipelineDescriptor.colorAttachmentAtIndex(0).setBlendingEnabled(true);
+	options.pipelineDescriptor.colorAttachmentAtIndex(0).setDestinationRGBBlendFactor(MTLBlendFactorOneMinusDestinationColor);	
 	
 	blendShader := MTLCreatePipeline(options);
 

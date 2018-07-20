@@ -7,7 +7,6 @@ COMMON:
 
 OPTIONS:
 
-  *-k"-rpath @loader_path/Frameworks"
   -k"-rpath @loader_path/../Frameworks"
 
 RESOURCE PATHS:
@@ -17,5 +16,5 @@ RESOURCE PATHS:
 
 SOURCE PATHS:
 
-  ../files
-  ../lazarus/package/utils
+  $parent/files
+  $parent/lazarus/package/utils

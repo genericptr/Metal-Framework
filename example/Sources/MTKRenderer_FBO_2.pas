@@ -190,8 +190,6 @@ function TMTKRenderer.init (inView: MTKView): TMTKRenderer;
 var
 	error: NSError;
 	options: TMetalPipelineOptions;
-	pipelineStateDescriptor: MTLRenderPipelineDescriptor;
-	colorAttachment: MTLRenderPipelineColorAttachmentDescriptor;
 	i: integer;
 begin
 	view := inView;
@@ -219,34 +217,13 @@ begin
 	guiShader := MTLCreatePipeline(options);
 
 	// model shader
-
-	{$define DIRECT_RENDER_PIPELINE_DESC}
-	{$ifdef DIRECT_RENDER_PIPELINE_DESC}
-	pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
-	pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
-	
-	colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
-	colorAttachment.setPixelFormat(MTLPixelFormatInvalid);
-
-	colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(1);
-	colorAttachment.setPixelFormat(MTLPixelFormatBGRA8Unorm);
-
-	colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(2);
-	colorAttachment.setPixelFormat(MTLPixelFormatBGRA8Unorm);
-	{$endif}
-
 	options := TMetalPipelineOptions.Default;
 	options.libraryName := ResourcePath('Teapot_FBO', 'metallib');
 
-	{$ifdef DIRECT_RENDER_PIPELINE_DESC}
-	options.pipelineStateDescriptor := pipelineStateDescriptor;
-	{$else}
-	options.colorAttachments := [
-		TMetalPipelineColorAttachment.Create(MTLPixelFormatInvalid),
-		TMetalPipelineColorAttachment.Create(MTLPixelFormatBGRA8Unorm),
-		TMetalPipelineColorAttachment.Create(MTLPixelFormatBGRA8Unorm)
-	];
-	{$endif}
+	options.pipelineDescriptor := MTLCreatePipelineDescriptor;
+	options.pipelineDescriptor.colorAttachmentAtIndex(0).setPixelFormat(MTLPixelFormatInvalid);
+	options.pipelineDescriptor.colorAttachmentAtIndex(1).setPixelFormat(MTLPixelFormatBGRA8Unorm);
+	options.pipelineDescriptor.colorAttachmentAtIndex(2).setPixelFormat(MTLPixelFormatBGRA8Unorm);
 
 	modelShader := MTLCreatePipeline(options);
 
@@ -254,14 +231,8 @@ begin
 	MTLSetClearColor(MTLClearColorMake(0.2, 0.2, 0.2, 1));
 
 	// output textures
-	// TODO: how do we resize these?
-	{$ifdef DIRECT_RENDER_PIPELINE_DESC}
-	outputColorTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(1).pixelFormat, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
-	outputDepthTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(2).pixelFormat, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
-	{$else}
-	outputColorTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, options.colorAttachments[1].pixelFormat, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
-	outputDepthTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, options.colorAttachments[2].pixelFormat, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
-	{$endif}
+	outputColorTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, options.pipelineDescriptor.colorAttachmentAtIndex(1).pixelFormat, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
+	outputDepthTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, options.pipelineDescriptor.colorAttachmentAtIndex(2).pixelFormat, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
 end;
 
 end.
