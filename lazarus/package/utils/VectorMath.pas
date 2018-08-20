@@ -1,7 +1,7 @@
 {$mode objfpc}
 {$modeswitch advancedrecords}
 
-unit MetalTypes;
+unit VectorMath;
 interface
 uses
 	Math, SysUtils;

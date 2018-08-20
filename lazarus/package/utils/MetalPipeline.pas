@@ -31,6 +31,7 @@ type
 
 type
 	TMetalContext = class
+	private type TFrameState = (kMetalContextFrameStateOpen, kMetalContextFrameStateRender);
 	public
 		view: MTKView;
 		device: MTLDeviceProtocol;
@@ -42,7 +43,7 @@ type
 		commandBuffer: MTLCommandBufferProtocol;
 		renderEncoder: MTLRenderCommandEncoderProtocol;
 		computeEncoder: MTLComputeCommandEncoderProtocol;
-		drawing: boolean;
+		frameState: set of TFrameState;
 	public
 		class function SharedContext: TMetalContext;
 
@@ -91,7 +92,8 @@ procedure MTLSetFragmentBuffer (buffer: MTLBufferProtocol; offset: NSUInteger; i
 procedure MTLSetFragmentBytes (bytes: pointer; len: NSUInteger; index: NSUInteger);
 
 { Textures }
-function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat; usage: MTLTextureUsage): MTLTextureProtocol;
+function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat; usage: MTLTextureUsage): MTLTextureProtocol; overload;
+function MTLNewTexture (desc: MTLTextureDescriptor): MTLTextureProtocol; overload;
 
 function MTLLoadTexture (path: string): MTLTextureProtocol;
 function MTLLoadTexture (	bytes: pointer; 
@@ -121,7 +123,7 @@ procedure MTLSetFrontFacingWinding (winding: MTLWinding);
 
 { Compute }
 procedure MTLBeginCommand;
-procedure MTLEndCommand;
+procedure MTLEndCommand (waitUntilCompleted: boolean = false);
 procedure MTLBeginEncoding (pipeline: TMetalPipeline; renderPassDescriptor: MTLRenderPassDescriptor = nil);
 procedure MTLEndEncoding;
 
@@ -334,13 +336,13 @@ end;
 procedure ValidateRenderFrame;
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
-	Fatal(not CurrentThreadContext.drawing, kError_UnopenedFrame);
+	Fatal(CurrentThreadContext.frameState = [], kError_UnopenedFrame);
 end;
 
 procedure MTLSetShader(pipeline: TMetalPipeline);
 begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
-	Fatal(not CurrentThreadContext.drawing, kError_UnopenedFrame);
+	Fatal(CurrentThreadContext.frameState = [], kError_UnopenedFrame);
 	CurrentThreadContext.currentPipeline := pipeline;
 end;
 
@@ -350,6 +352,7 @@ begin
 	with CurrentThreadContext do begin
 	FinalizeDrawing(currentPipeline);
 	renderEncoder.drawIndexedPrimitives_indexCount_indexType_indexBuffer_indexBufferOffset(primitiveType, indexCount, indexType, indexBuffer, indexBufferOffset);
+	frameState += [kMetalContextFrameStateRender];
 	end;
 end;
 
@@ -359,6 +362,7 @@ begin
 	with CurrentThreadContext do begin
 	FinalizeDrawing(currentPipeline);
 	renderEncoder.drawPrimitives_vertexStart_vertexCount(primitiveType, vertexStart, vertexCount);
+	frameState += [kMetalContextFrameStateRender];
 	end;
 end;
 
@@ -487,17 +491,20 @@ begin
 	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 	with CurrentThreadContext do begin
 	commandBuffer := commandQueue.commandBuffer;
-	drawing := true;
+	frameState += [kMetalContextFrameStateOpen];
 	end;
 end;
 
-procedure MTLEndCommand;
+procedure MTLEndCommand (waitUntilCompleted: boolean = false);
 begin
 	with CurrentThreadContext do begin
-	commandBuffer.presentDrawable(CurrentThreadContext.view.currentDrawable);
+	if kMetalContextFrameStateRender in frameState then
+		commandBuffer.presentDrawable(CurrentThreadContext.view.currentDrawable);
 	commandBuffer.commit;
+	if waitUntilCompleted then
+		commandBuffer.waitUntilCompleted;
 	commandBuffer := nil;
-	drawing := false;
+	frameState := [];
 	end;
 end;
 
@@ -659,6 +666,12 @@ end;
 function MTLNewTexture (width, height: integer; textureType: MTLTextureType; pixelFormat: MTLPixelFormat; usage: MTLTextureUsage): MTLTextureProtocol;
 begin
 	result := MTLLoadTexture(nil, width, height, textureType, pixelFormat, 0, usage);
+end;
+
+function MTLNewTexture (desc: MTLTextureDescriptor): MTLTextureProtocol;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+	result :=  CurrentThreadContext.device.newTextureWithDescriptor(desc);
 end;
 
 procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);

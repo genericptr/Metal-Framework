@@ -6,7 +6,7 @@ unit MetalControl;
 interface
 
 uses
-	MetalTypes, MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
+	MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
   Classes, SysUtils, 
   LResources,
   Forms, Controls, Graphics, Dialogs;
@@ -36,6 +36,7 @@ type
 		public
 			renderView: MTKView;
 			viewport: MTLViewport;
+			invalidateOnResize: boolean;
 		public
 			constructor Create(AOwner: TComponent); override;
 			procedure SetPreferredFrameRate(newValue: integer);
@@ -178,6 +179,9 @@ begin
 	viewport.zfar := 1;
 
 	renderView.setFrame(NSMakeRect(0, 0, Width, Height));
+
+	if invalidateOnResize then
+		Invalidate;
 end;
 
 procedure TMetalBaseControl.CreateWnd;

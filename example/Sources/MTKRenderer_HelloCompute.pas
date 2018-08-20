@@ -4,7 +4,7 @@
 unit MTKRenderer_HelloCompute;
 interface
 uses
-	SIMDTypes, MetalTypes, Metal, MetalKit, MetalPipeline,
+	SIMDTypes, VectorMath, Metal, MetalKit, MetalPipeline,
 	CocoaAll, MacOSAll, SysUtils;
 
 type
@@ -130,7 +130,7 @@ begin
 			MTLDraw(MTLPrimitiveTypeTriangle, 0, 6);
 		MTLEndEncoding;
 
-	MTLEndCommand;
+	MTLEndCommand(true);
 end;
 
 procedure TMTKRenderer.dealloc;

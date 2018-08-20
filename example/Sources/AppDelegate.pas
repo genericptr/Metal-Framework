@@ -12,9 +12,9 @@ uses
 	//MTKRenderer_DepthStencil,
 	//MTKRenderer_OBJ,
 	//MTKRenderer_Blending,
-	//MTKRenderer_HelloCompute,
+	MTKRenderer_HelloCompute,
 	//MTKRenderer_FBO,
-	MTKRenderer_FBO_2,
+	//MTKRenderer_FBO_2,
 	MetalKit, Metal, CocoaAll, MacOSAll;
 
 type
