@@ -7,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, 
-  MetalTypes, MetalPipeline, MetalUtils, MetalControl, Metal;
+  VectorMath, MetalPipeline, MetalUtils, MetalControl, Metal;
 
 type
 

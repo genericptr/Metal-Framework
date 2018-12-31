@@ -5,7 +5,7 @@
 unit MeshLoader;
 interface
 uses
-	MetalTypes, SysUtils, FGL, Classes;
+	VectorMath, SysUtils, FGL, Classes;
 
 {macro on}
 {define padding(i,n):=padding_#i: array[0..#n-1] of TScalar}

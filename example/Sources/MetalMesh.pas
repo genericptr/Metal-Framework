@@ -4,7 +4,7 @@
 unit MetalMesh;
 interface
 uses
-	Metal, MeshLoader, MetalTypes, SysUtils;
+	Metal, MeshLoader, VectorMath, SysUtils;
 
 type
 	TMetalMesh = class (TMesh)

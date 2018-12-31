@@ -5,7 +5,7 @@
 unit MTKRenderer_Blending;
 interface
 uses
-	MetalTypes, Metal, MetalKit, MetalPipeline,
+	VectorMath, Metal, MetalKit, MetalPipeline,
 	CocoaAll, MacOSAll, SysUtils, Math, FGL;
 
 type

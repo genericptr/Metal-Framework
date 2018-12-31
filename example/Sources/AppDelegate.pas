@@ -4,7 +4,7 @@
 unit AppDelegate;
 interface
 uses
-	//MTKRenderer_HelloTriangle,
+	MTKRenderer_HelloTriangle,
 	//MTKRenderer_BasicBuffers,
 	//MTKRenderer_BasicTexturing,
 	//MTKRenderer_API,
@@ -12,7 +12,7 @@ uses
 	//MTKRenderer_DepthStencil,
 	//MTKRenderer_OBJ,
 	//MTKRenderer_Blending,
-	MTKRenderer_HelloCompute,
+	//MTKRenderer_HelloCompute,
 	//MTKRenderer_FBO,
 	//MTKRenderer_FBO_2,
 	MetalKit, Metal, CocoaAll, MacOSAll;
@@ -45,6 +45,8 @@ begin
 end;
 
 procedure TAppController.applicationDidFinishLaunching(notification: NSNotification);
+var
+	pool: NSAutoreleasePool;
 begin
 	renderView := MTKView.alloc.initWithFrame_device(MacOSAll.CGRect(window.contentView.bounds), MTLCreateSystemDefaultDevice);
 	renderView.setAutoresizingMask(NSViewWidthSizable + NSViewHeightSizable);
@@ -58,7 +60,8 @@ begin
  			writeln('metal is not supported on this device');
  			halt;
  		end;
- 		
+ 	
+ 	pool := NSAutoreleasePool.alloc.init;
  	renderer := TMTKRenderer.alloc.init(renderView);
 end;
 

@@ -5,7 +5,7 @@
 unit MTKRenderer_FBO;
 interface
 uses
-	MetalMesh, Scanner, MeshLoader, MetalTypes, Metal, MetalKit, MetalPipeline,
+	MetalMesh, Scanner, MeshLoader, VectorMath, Metal, MetalKit, MetalPipeline,
 	CocoaAll, MacOSAll, SysUtils, Math, CTypes, FGL;
 
 const

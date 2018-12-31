@@ -191,6 +191,7 @@ begin
 
 	pipelineStateDescriptor := MTLRenderPipelineDescriptor.alloc.init.autorelease;
 	pipelineStateDescriptor.setDepthAttachmentPixelFormat(view.depthStencilPixelFormat);
+	pipelineStateDescriptor.setSampleCount(view.sampleCount);
 
 	colorAttachment := pipelineStateDescriptor.colorAttachments.objectAtIndexedSubscript(0);
 	colorAttachment.setPixelFormat(view.colorPixelFormat);

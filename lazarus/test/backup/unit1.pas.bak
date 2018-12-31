@@ -32,7 +32,7 @@ implementation
 {$R *.lfm}
 
 uses
-  MetalTypes, Math;
+  VectorMath, Math;
 
 const
   AAPLVertexInputIndexVertices     = 0;

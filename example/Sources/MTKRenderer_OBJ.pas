@@ -5,7 +5,7 @@
 unit MTKRenderer_OBJ;
 interface
 uses
-	MetalMesh, Scanner, MeshLoader, MetalTypes, Metal, MetalKit, MetalPipeline,
+	MetalMesh, Scanner, MeshLoader, VectorMath, Metal, MetalKit, MetalPipeline,
 	CocoaAll, MacOSAll, SysUtils, Math, FGL;
 
 // https://www.raywenderlich.com/146416/metal-tutorial-swift-3-part-2-moving-3d
