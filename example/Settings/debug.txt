@@ -1,4 +1,0 @@
-
-b fpc_raiseexception
-
-r
