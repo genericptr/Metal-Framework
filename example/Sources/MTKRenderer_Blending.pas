@@ -86,6 +86,8 @@ begin
 	vertices[3] := TexVertex(V2(size,  -size),  V2(1, 0));
 	vertices[4] := TexVertex(V2(-size,   size), V2(0, 1));
 	vertices[5] := TexVertex(V2(size,   size),  V2(1, 1));
+	
+	MTLMakeContextCurrent(context);
 
 	MTLBeginFrame;
 		

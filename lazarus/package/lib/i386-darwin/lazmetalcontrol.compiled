@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Compiler Value="/usr/local/bin/ppc386" Date="1538326666"/>
+  <Params Value=" -MObjFPC -Scghi -O1 -gw -gl -l -vewnhibq -Fu/Developer/Projects/FPC/Metal-Framework/lazarus/package/framework -Fu/Developer/Projects/FPC/Metal-Framework/lazarus/package/utils -Fu/Users/ryanjoseph/lazarus/packager/units/i386-darwin -Fu/Users/ryanjoseph/lazarus/components/lazutils/lib/i386-darwin -Fu/Users/ryanjoseph/lazarus/lcl/units/i386-darwin -Fu/Users/ryanjoseph/lazarus/lcl/units/i386-darwin/cocoa -Fu/Developer/Projects/FPC/Metal-Framework/lazarus/package/ -FU/Developer/Projects/FPC/Metal-Framework/lazarus/package/lib/i386-darwin/ -dLCL -dLCLcocoa lazmetalcontrol.pas"/>
+  <Complete Value="False" MainPPUExists="False"/>
+</CONFIG>

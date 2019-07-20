@@ -241,6 +241,8 @@ var
 	scale: single;
 	v: TVec3;
 begin
+	MTLMakeContextCurrent(context);
+	
 	scale := 0.55;
 
 	// TODO: slamming all uniforms into a single struct we need

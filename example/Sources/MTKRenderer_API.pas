@@ -14,6 +14,7 @@ type
 		private
 			view: MTKView;
 
+			context: TMetalContext;
 			pipeline: TMetalPipeline;
 			viewportSize: vector_uint2;
 			viewport: MTLViewport;
@@ -64,6 +65,8 @@ var
 	size: single = 150;
 	verticies: array[0..2] of TAAPLVertex;
 begin
+	MTLMakeContextCurrent(context);
+
 	verticies[0] := AAPLVertex(V2(size, -size), V4(1, 0, 0, 1));
 	verticies[1] := AAPLVertex(V2(-size, -size), V4(0, 1, 0, 1 ));
 	verticies[2] := AAPLVertex(V2(0, size), V4(0, 0, 1, 1));
@@ -78,7 +81,8 @@ end;
 
 procedure TMTKRenderer.dealloc;
 begin
-	MTLFree(pipeline);
+	pipeline.Free;
+	context.Free;
 
 	inherited dealloc;
 end;
@@ -92,13 +96,15 @@ begin
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
 
-	options := TMetalPipelineOptions.Default;
-	
-	options.libraryName := ResourcePath('Color', 'metallib');
-	options.vertexFunction := 'vertexShader';
-	options.fragmentFunction := 'fragmentShader';
+	context := MTLCreateContext(view);
+	MTLMakeContextCurrent(context);
 
-	pipeline := MTLCreatePipeline(view, @options);
+	options := TMetalPipelineOptions.Default;
+	options.libraryName := ResourcePath('Color', 'metallib');
+	options.vertexShader := 'vertexShader';
+	options.fragmentShader := 'fragmentShader';
+
+	pipeline := MTLCreatePipeline(options);
 end;
 
 end.

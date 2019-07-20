@@ -107,7 +107,8 @@ var
 var
 	colorAttachment: MTLRenderPassColorAttachmentDescriptor;
 begin
-
+	MTLMakeContextCurrent(context);
+	
 	// model
 	modelUniforms.modelMatrix := TMat4.Identity;
 	modelUniforms.modelMatrix *= TMat4.Translate(0, 0, -4);

@@ -9,74 +9,74 @@ uses
 
 type
 	TMetalLibrary = class
-	public
-		lib: MTLLibraryProtocol;
-		functions: NSMutableDictionary;
-	public
-		function GetFunction (name: string): MTLFunctionProtocol;
-		destructor Destroy; override;
+		public
+			lib: MTLLibraryProtocol;
+			functions: NSMutableDictionary;
+		public
+			function GetFunction (name: string): MTLFunctionProtocol;
+			destructor Destroy; override;
 	end;
 
 type
 	TMetalPipeline = class
-	public
-		renderPipelineState: MTLRenderPipelineStateProtocol;
-		computePipelineState: MTLComputePipelineStateProtocol;
-		depthStencilState: MTLDepthStencilStateProtocol;
-		shaderLibrary: TMetalLibrary;
-	public
-		destructor Destroy; override;
+		public
+			renderPipelineState: MTLRenderPipelineStateProtocol;
+			computePipelineState: MTLComputePipelineStateProtocol;
+			depthStencilState: MTLDepthStencilStateProtocol;
+			shaderLibrary: TMetalLibrary;
+		public
+			destructor Destroy; override;
 	end;
 
 
 type
 	TMetalContext = class
-	private type TFrameState = (kMetalContextFrameStateOpen, kMetalContextFrameStateRender);
-	public
-		view: MTKView;
-		device: MTLDeviceProtocol;
-		commandQueue: MTLCommandQueueProtocol;
-		currentPipeline: TMetalPipeline;
-		textureLoader: MTKTextureLoader;
+		private type TFrameState = (kMetalContextFrameStateOpen, kMetalContextFrameStateRender);
+		public
+			view: MTKView;
+			device: MTLDeviceProtocol;
+			commandQueue: MTLCommandQueueProtocol;
+			currentPipeline: TMetalPipeline;
+			textureLoader: MTKTextureLoader;
 
-		// rendering
-		commandBuffer: MTLCommandBufferProtocol;
-		renderEncoder: MTLRenderCommandEncoderProtocol;
-		computeEncoder: MTLComputeCommandEncoderProtocol;
-		frameState: set of TFrameState;
-	public
-		class function SharedContext: TMetalContext;
+			// rendering
+			commandBuffer: MTLCommandBufferProtocol;
+			renderEncoder: MTLRenderCommandEncoderProtocol;
+			computeEncoder: MTLComputeCommandEncoderProtocol;
+			frameState: set of TFrameState;
+		public
+			class function SharedContext: TMetalContext;
 
-		procedure SetPreferredFrameRate(newValue: integer);
-		procedure SetColorPixelFormat(pixelFormat: MTLPixelFormat);
-		procedure MakeCurrent;
-		procedure Draw;
-		
-		destructor Destroy; override;
+			procedure SetPreferredFrameRate(newValue: integer);
+			procedure SetColorPixelFormat(pixelFormat: MTLPixelFormat);
+			procedure MakeCurrent;
+			procedure Draw;
+			
+			destructor Destroy; override;
 	end;
 
 type
 	TMetalLibraryOptions = record
-	public
-		name: string;			// path to compiled .metallib file OR .metal file which will be compiled at runtime
-	public
-		class function Default: TMetalLibraryOptions; static;
-		constructor Create (_name: string);
+		public
+			name: string;			// path to compiled .metallib file OR .metal file which will be compiled at runtime
+		public
+			class function Default: TMetalLibraryOptions; static;
+			constructor Create (_name: string);
 	end;
 
 type
 	TMetalPipelineOptions = record
-	public
-		libraryName: string;					// path to compiled .metallib file
-		shaderLibrary: TMetalLibrary;	// metal library to locate shader functions
+		public
+			libraryName: string;					// path to compiled .metallib file
+			shaderLibrary: TMetalLibrary;	// metal library to locate shader functions
 
-		vertexShader: string;				// name of vertex function in shader file (see TMetalPipelineOptions.Default)
-		fragmentShader: string;			// name of fragment function in shader file (see TMetalPipelineOptions.Default)
-		kernelFunction: string;
-		vertexDescriptor: MTLVertexDescriptor;
-		pipelineDescriptor: MTLRenderPipelineDescriptor;
-	public
-		class function Default: TMetalPipelineOptions; static;
+			vertexShader: string;				// name of vertex function in shader file (see TMetalPipelineOptions.Default)
+			fragmentShader: string;			// name of fragment function in shader file (see TMetalPipelineOptions.Default)
+			kernelFunction: string;
+			vertexDescriptor: MTLVertexDescriptor;
+			pipelineDescriptor: MTLRenderPipelineDescriptor;
+		public
+			class function Default: TMetalPipelineOptions; static;
 	end;
 
 { Drawing }

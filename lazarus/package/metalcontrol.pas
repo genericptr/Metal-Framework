@@ -213,7 +213,11 @@ end;
 
 procedure TMetalBaseControl.Paint;
 begin
-	if Assigned(OnPaint) and IsVisible then OnPaint(Self);
+	if Assigned(OnPaint) and IsVisible then
+    begin
+      MTLMakeContextCurrent(context);
+      OnPaint(Self);
+    end;
 end;
 
 {=============================================}

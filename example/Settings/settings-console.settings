@@ -1,0 +1,27 @@
+
+COMMON:
+
+  @Product_Name = "MetalKitExample"
+  @Company = "my_company"
+  
+  Parent = "settings-base.settings"
+  Main = "$project/Sources/MetalKitExample.pas"
+  Product_Name = "$product_name"
+
+  Target = "Bundle"
+  Configuration = "Debug"
+
+OPTIONS (debug):
+
+  -k"-rpath @loader_path/Frameworks"
+
+SOURCE PATHS:
+
+  $project/Sources
+
+FRAMEWORK PATHS:
+
+  /Library/Frameworks
+
+INCLUDE PATHS:
+

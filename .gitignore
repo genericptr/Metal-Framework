@@ -5,3 +5,6 @@ Bundle.Debug.ppcx64
 command.txt
 lazarus/lib
 metal_utils_tests.pas
+
+# binaries
+example/MetalKitExample.app/Contents/MacOS/MetalKitExample

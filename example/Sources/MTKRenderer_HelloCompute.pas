@@ -107,6 +107,8 @@ var
 	size: single = 150;
 	vertices: array[0..5] of TAAPLVertex;
 begin
+	MTLMakeContextCurrent(context);
+	
 	vertices[0] := AAPLVertex(V2(size,  -size),  V2(1.0, 0.0));
 	vertices[1] := AAPLVertex(V2(-size,  -size), V2(0.0, 0.0));
 	vertices[2] := AAPLVertex(V2(-size,   size), V2(0.0, 1.0));

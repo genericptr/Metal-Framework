@@ -108,7 +108,8 @@ var
 	quadVertices: array[0..5] of TTexVertex;
 	w, h: single;
 begin
-
+	MTLMakeContextCurrent(context);
+	
 	// model
 	modelUniforms.modelMatrix := TMat4.Identity;
 	modelUniforms.modelMatrix *= TMat4.Translate(0, 0, -4);
