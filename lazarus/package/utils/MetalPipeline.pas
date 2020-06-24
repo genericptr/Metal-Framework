@@ -114,7 +114,8 @@ function MTLLoadTexture (	bytes: pointer;
 function MTLCopyLastFrameTexture(texture: MTLTextureProtocol): CGImageRef;
 procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
 procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
-procedure MTLWriteTextureToClipboard(texture: MTLTextureProtocol; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
+procedure MTLWriteTextureToClipboard(texture: MTLTextureProtocol; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
+procedure MTLWriteTextureToClipboard(fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
 
 { Buffers }
 function MTLNewBuffer (bytes: pointer; len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol; overload;
@@ -689,7 +690,17 @@ begin
   Fatal(CurrentThreadContext = nil, kError_InvalidContext);
   with CurrentThreadContext do begin
     view.setFramebufferOnly(false);
-    MTLWriteTextureToFile(view.currentDrawable.texture, path);
+    MTLWriteTextureToFile(view.currentDrawable.texture, path, fileType, imageProps);
+    view.setFramebufferOnly(true);
+  end;
+end;
+
+procedure MTLWriteTextureToClipboard(fileType: NSBitmapImageFileType; imageProps: NSDictionary);
+begin
+  Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+  with CurrentThreadContext do begin
+    view.setFramebufferOnly(false);
+    MTLWriteTextureToClipboard(view.currentDrawable.texture, fileType, imageProps);
     view.setFramebufferOnly(true);
   end;
 end;

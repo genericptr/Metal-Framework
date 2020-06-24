@@ -62,9 +62,7 @@ var
 begin
 	path := NSSTR('~/metal-triangle.png').stringByExpandingTildeInPath;
 	writeln('saving screen shot to "', path.utf8string, '"');
-	renderView.setFramebufferOnly(false);
-	MTLWriteTextureToFile(renderView.currentDrawable.texture, path.utf8string);
-	renderView.setFramebufferOnly(true);
+	MTLWriteTextureToFile(path.utf8string);
 
 	NSWorkspace.sharedWorkspace.openFile(path);
 end;
@@ -72,9 +70,7 @@ end;
 procedure TAppController.copyScreen (sender: id);
 begin
 	writeln('copying screen to clipboard');
-	renderView.setFramebufferOnly(false);
-	MTLWriteTextureToClipboard(renderView.currentDrawable.texture);
-	renderView.setFramebufferOnly(true);
+	MTLWriteTextureToClipboard;
 end;
 
 procedure TAppController.newDocument (sender: id);
