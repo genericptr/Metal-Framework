@@ -5,7 +5,15 @@
 unit MetalPipeline;
 interface
 uses
-	MetalUtils, Metal, MetalKit, CocoaAll, SysUtils;
+	MetalUtils, Metal, MetalKit, CocoaAll, SysUtils,
+	{$ifndef COCOA_1010}
+	// pre-10.10 FPC RTL CocoaAll.pas doesn't use MacOSAll types!
+	// if you're using a compiler which supports the 10.10 headers
+	// then enable -dCOCOA_1010 to use all types from MacOSAll.pas
+	MacOSAll, CGImage, CGDataProvider, CGColorSpace;
+	{$else}
+	MacOSAll;
+	{$endif}
 
 type
 	TMetalLibrary = class
@@ -103,8 +111,10 @@ function MTLLoadTexture (	bytes: pointer;
 													usage: MTLTextureUsage = MTLTextureUsageShaderRead
 													): MTLTextureProtocol;
 
+function MTLCopyLastFrameTexture(texture: MTLTextureProtocol): CGImageRef;
 procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
 procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil); overload;
+procedure MTLWriteTextureToClipboard(texture: MTLTextureProtocol; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
 
 { Buffers }
 function MTLNewBuffer (bytes: pointer; len: NSUInteger; options: MTLResourceOptions = MTLResourceCPUCacheModeDefaultCache): MTLBufferProtocol; overload;
@@ -160,9 +170,6 @@ type
 	end;
 
 implementation
-uses
-	MacOSAll,
-	CGImage, CGDataProvider, CGColorSpace; // FPC RTL CocoaAll.pas doesn't use MacOSAll types!
 
 const
 	kError_InvalidContext = 'no current context';
@@ -504,7 +511,9 @@ begin
 	commandBuffer.commit;
 	if waitUntilCompleted then
 		commandBuffer.waitUntilCompleted;
-	commandBuffer := nil;
+	// we need the most recent commandBuffer for saving textures
+	// so keep the refence alive
+	//commandBuffer := nil;
 	frameState := [];
 	end;
 end;
@@ -675,20 +684,17 @@ begin
 	result :=  CurrentThreadContext.device.newTextureWithDescriptor(desc);
 end;
 
-procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
+procedure MTLWriteTextureToFile(path: pchar; fileType: NSBitmapImageFileType; imageProps: NSDictionary);
 begin
-	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
-	with CurrentThreadContext do begin
-	view.setFramebufferOnly(false);
-	view.draw;
-	view.draw;
-	view.draw;
-	MTLWriteTextureToFile(view.currentDrawable.texture, path);
-	view.setFramebufferOnly(true);
-	end;
+  Fatal(CurrentThreadContext = nil, kError_InvalidContext);
+  with CurrentThreadContext do begin
+    view.setFramebufferOnly(false);
+    MTLWriteTextureToFile(view.currentDrawable.texture, path);
+    view.setFramebufferOnly(true);
+  end;
 end;
 
-procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType = NSPNGFileType; imageProps: NSDictionary = nil);
+function MTLCopyLastFrameTexture(texture: MTLTextureProtocol): CGImageRef;
 var
   width, height, bytesPerRow, bytesCount: integer;
   bytes: pointer;
@@ -696,59 +702,88 @@ var
   bitmapInfo: CGBitmapInfo;
   provider: CGDataProviderRef;
   imageRef: CGImageRef;
-  finalImage: NSImage;
-  imageData: NSData;
-  imageRep: NSBitmapImageRep;
-begin  
+  blitEncoder: MTLBlitCommandEncoderProtocol;
+begin
+	Fatal(CurrentThreadContext = nil, kError_InvalidContext);
 	Fatal(texture.pixelFormat <> MTLPixelFormatBGRA8Unorm, 'texture must be MTLPixelFormatBGRA8Unorm pixel format.');
 
 	// read bytes
 	width := texture.width;
 	height := texture.height;
-	bytesPerRow := texture.width * 4;
+  bytesPerRow := texture.width * 4;
 	bytesCount := width * height * 4;
 	bytes := GetMem(bytesCount);
 
-(*
-	//https://forums.developer.apple.com/thread/95327
-	blitEncoder: MTLBlitCommandEncoderProtocol;
-	imageBuffer: MTLBufferProtocol;
+	// blit from last command buffer
+	with CurrentThreadContext do 
+	begin
+		commandBuffer := commandQueue.commandBuffer;
+		blitEncoder := commandBuffer.blitCommandEncoder;
+		view.draw;
+		blitEncoder.synchronizeResource(texture);
+		blitEncoder.endEncoding;
+		commandBuffer.waitUntilCompleted;
+	end;
 
-	imageBuffer := view.device.newBufferWithLength_options(bytesCount, MTLResourceCPUCacheModeDefaultCache);
-	blitEncoder := commandBuffer.blitCommandEncoder;
-	blitEncoder.copyFromTexture(
-															texture,  
-					                    {sourceSlice:} 0,  
-					                    {sourceLevel:} 0,  
-					                    {sourceOrigin:} MTLOriginMake(0, 0, 0),  
-					                    {sourceSize:} MTLSizeMake(width, height, 1),  
-					                    {toBuffer:} imageBuffer,  
-					                    {destinationOffset:} 0,  
-					                    {destinationBytesPerRow:} bytesPerRow,  
-					                    {destinationBytesPerImage:} 0);
-	blitEncoder.endEncoding;
-
-	//BlockMove(bytes, imageBuffer.contents, imageBuffer.length);  
-*)
-
-	texture.getBytes_bytesPerRow_fromRegion_mipmapLevel(bytes, bytesPerRow, MTLRegionMake2D(0, 0, width, height), 0);
-
-	colorSpace := CGColorSpaceCreateDeviceRGB;
+	// get bytes from texture
+  texture.getBytes_bytesPerRow_fromRegion_mipmapLevel(bytes, bytesPerRow, MTLRegionMake2D(0, 0, width, height), 0);
+  
+  // create CGImage from texture bytes
+  colorSpace := CGColorSpaceCreateDeviceRGB;
 	bitmapInfo := kCGImageAlphaFirst or kCGBitmapByteOrder32Little;
 	provider := CGDataProviderCreateWithData(nil, bytes, bytesCount, nil);
 	imageRef := CGImageCreate(width, height, 8, 32, bytesPerRow, colorSpace, bitmapInfo, provider, nil, 1, kCGRenderingIntentDefault);
 
-	finalImage := NSImage.alloc.initWithCGImage_size(imageRef, NSMakeSize(width, height));
-	imageData := finalImage.TIFFRepresentation;
-	imageRep := NSBitmapImageRep.imageRepWithData(imageData);
-	//imageProps := NSDictionary.dictionaryWithObject_forKey(NSNumber.numberWithFloat(1), NSImageCompressionFactor);
-	imageData := imageRep.representationUsingType_properties(fileType, imageProps);
-	imageData.writeToFile_atomically(NSSTR(path), false);
-
 	CFRelease(provider);
-	CFRelease(imageRef);
 	CFRelease(colorSpace);
-	finalImage.release;
+
+	result := imageRef;
+end; 
+
+procedure MTLWriteTextureToFile(texture: MTLTextureProtocol; path: pchar; fileType: NSBitmapImageFileType; imageProps: NSDictionary);
+var
+  imageRef: CGImageRef;
+  finalImage: NSImage;
+  imageData: NSData;
+  imageRep: NSBitmapImageRep;
+begin
+	imageRef := MTLCopyLastFrameTexture(texture);
+	if imageRef <> nil then
+		begin
+			finalImage := NSImage.alloc.initWithCGImage_size(imageRef, NSMakeSize(CGImageGetWidth(imageRef), CGImageGetHeight(imageRef)));
+			imageData := finalImage.TIFFRepresentation;
+			imageRep := NSBitmapImageRep.imageRepWithData(imageData);
+			imageData := imageRep.representationUsingType_properties(fileType, imageProps);
+			imageData.writeToFile_atomically(NSSTR(path), false);
+			
+			finalImage.release;
+			CFRelease(imageRef);
+		end;
+end;
+
+procedure MTLWriteTextureToClipboard(texture: MTLTextureProtocol; fileType: NSBitmapImageFileType; imageProps: NSDictionary);
+var
+  imageRef: CGImageRef;
+  finalImage: NSImage;
+  imageData: NSData;
+  imageRep: NSBitmapImageRep;
+  pb: NSPasteboard;
+begin
+	imageRef := MTLCopyLastFrameTexture(texture);
+	if imageRef <> nil then
+		begin
+			finalImage := NSImage.alloc.initWithCGImage_size(imageRef, NSMakeSize(CGImageGetWidth(imageRef), CGImageGetHeight(imageRef)));
+			imageData := finalImage.TIFFRepresentation;
+			imageRep := NSBitmapImageRep.imageRepWithData(imageData);
+			imageData := imageRep.representationUsingType_properties(fileType, imageProps);
+			
+			pb := NSPasteboard.generalPasteboard;
+			pb.clearContents;
+			pb.writeObjects(NSArray.arrayWithObject(finalImage));
+			
+			finalImage.release;
+			CFRelease(imageRef);
+		end;
 end;
 
 procedure MTLMakeContextCurrent (context: TMetalContext);

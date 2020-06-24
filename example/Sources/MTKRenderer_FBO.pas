@@ -131,6 +131,8 @@ begin
 	MTLBeginCommand;
 
 		// draw model
+		// todo: see FBO_2 for the correct way to do this
+		// it changed and we never updated the other demos???
 		MTLBeginEncoding(modelShader, outputColorTexture);
 			worldUniforms.mode := kRenderModeColor;
 			// TODO: set clear color for encoder as param to MTLBeginEncoding
@@ -223,8 +225,8 @@ begin
 
 	// output textures
 	// TODO: how do we resize these?
-	outputColorTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, MTLPixelFormatBGRA8Unorm);
-	outputDepthTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, MTLPixelFormatRGBA16Float);
+	outputColorTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, MTLPixelFormatBGRA8Unorm, MTLTextureType2D, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
+	outputDepthTexture := MTLNewTexture(trunc(view.drawableSize.width), trunc(view.drawableSize.height), MTLTextureType2D, MTLPixelFormatRGBA16Float, MTLTextureType2D, MTLTextureUsageShaderRead or MTLTextureUsageRenderTarget);
 end;
 
 end.

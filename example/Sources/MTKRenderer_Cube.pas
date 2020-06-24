@@ -17,6 +17,7 @@ type
 		private
 			view: MTKView;
 
+			context: TMetalContext;
 			pipeline: TMetalPipeline;
 			viewport: MTLViewport;
 			uniformBuffer: MTLBufferProtocol;
@@ -73,6 +74,8 @@ var
 	uniforms: TAAPLUniforms;
 	scale: single;
 begin
+	MTLMakeContextCurrent(context);
+
 	A := AAPLVertex(-1.0,  1.0,  1.0, 1.0, 0.0, 0.0, 1.0);
 	B := AAPLVertex(-1.0, -1.0,  1.0, 0.0, 1.0, 0.0, 1.0);
 	C := AAPLVertex( 1.0, -1.0,  1.0, 0.0, 0.0, 1.0, 1.0);
@@ -118,7 +121,7 @@ end;
 
 procedure TMTKRenderer.dealloc;
 begin
-	MTLFree(pipeline);
+	pipeline.Free;
 
 	inherited dealloc;
 end;
@@ -132,12 +135,15 @@ begin
 	view.setDelegate(self);
 	view.delegate.mtkView_drawableSizeWillChange(view, view.drawableSize);
 
+	context := MTLCreateContext(view);
+	MTLMakeContextCurrent(context);
+
 	options := TMetalPipelineOptions.Default;
 	options.libraryName := ResourcePath('Transforms', 'metallib');
 	
 	uniformBuffer := view.device.newBufferWithLength_options(sizeof(TAAPLUniforms), MTLResourceOptionCPUCacheModeDefault);
 
-	pipeline := MTLCreatePipeline(view, @options);
+	pipeline := MTLCreatePipeline(options);
 end;
 
 end.

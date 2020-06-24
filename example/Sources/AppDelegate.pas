@@ -7,9 +7,9 @@ uses
 	//MTKRenderer_HelloTriangle,
 	//MTKRenderer_BasicBuffers,
 	//MTKRenderer_BasicTexturing,
-	//MTKRenderer_API,
+	MTKRenderer_API,
 	//MTKRenderer_Cube,
-	MTKRenderer_DepthStencil,
+	//MTKRenderer_DepthStencil,
 	//MTKRenderer_OBJ,
 	//MTKRenderer_Blending,
 	//MTKRenderer_HelloCompute,
@@ -28,6 +28,7 @@ type
    		renderer: TMTKRenderer;
 
    		procedure takeScreenshot (sender: id); message 'takeScreenshot:';
+   		procedure copyScreen (sender: id); message 'copyScreen:';
  	end;
 
 implementation
@@ -56,13 +57,23 @@ begin
 end;
 
 procedure TAppController.takeScreenshot (sender: id);
+var
+	path: NSString;
 begin
-	writeln('take screen shot');
+	path := NSSTR('~/metal-triangle.png').stringByExpandingTildeInPath;
+	writeln('saving screen shot to "', path.utf8string, '"');
 	renderView.setFramebufferOnly(false);
-	renderView.draw;
-	renderView.draw;
-	renderView.draw;
-	MTLWriteTextureToFile(renderView.currentDrawable.texture, 'metal-triangle.png');
+	MTLWriteTextureToFile(renderView.currentDrawable.texture, path.utf8string);
+	renderView.setFramebufferOnly(true);
+
+	NSWorkspace.sharedWorkspace.openFile(path);
+end;
+
+procedure TAppController.copyScreen (sender: id);
+begin
+	writeln('copying screen to clipboard');
+	renderView.setFramebufferOnly(false);
+	MTLWriteTextureToClipboard(renderView.currentDrawable.texture);
 	renderView.setFramebufferOnly(true);
 end;
 

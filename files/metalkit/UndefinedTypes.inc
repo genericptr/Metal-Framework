@@ -2,10 +2,10 @@
 
 // ModelIO.framework
 type
-	MDLMeshBufferAllocatorProtocol = objcprotocol (NSObjectProtocol) end;
-	MDLMeshBufferProtocol = objcprotocol (NSObjectProtocol) end;
-	MDLNamedProtocol = objcprotocol (NSObjectProtocol) end;
-	MDLMeshBufferZoneProtocol = objcprotocol (NSObjectProtocol) end;
+	MDLMeshBufferAllocatorProtocol = objcprotocol end;
+	MDLMeshBufferProtocol = objcprotocol end;
+	MDLNamedProtocol = objcprotocol end;
+	MDLMeshBufferZoneProtocol = objcprotocol end;
 
 type
 	MDLVertexDescriptor = NSObject;
