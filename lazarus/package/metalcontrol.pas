@@ -8,7 +8,7 @@ interface
 uses
 	MetalPipeline, Metal, MetalKit, CocoaAll, MacOSAll,
   Classes, SysUtils, 
-  LResources,
+  LResources, CocoaWSCommon, LCLType,
   Forms, Controls, Graphics, Dialogs;
 
 // http://wiki.freepascal.org/Lazarus_Packages
@@ -92,18 +92,42 @@ procedure Register;
 
 implementation
 
-{=============================================}
-{@! ___UTILS___ } 
-{=============================================}
+{ LazMTKView }
+
+type
+  TLazMTKView = objcclass (MTKView)
+    callback: TLCLCommonCallback;
+    procedure mouseDown(event: NSEvent); override;
+    procedure scrollWheel(event: NSEvent); override;
+  end;
+
+procedure TLazMTKView.mouseDown(event: NSEvent);
+begin
+  if not assigned(callback) or not callback.MouseUpDownEvent(event) then
+    begin
+      // do not pass mouseDown below or it will pass it to the parent control
+      // causing double events
+      //inherited mouseDown(event);
+    end;
+end;
+
+procedure TLazMTKView.scrollWheel(event: NSEvent);
+begin
+  if assigned(callback) then
+    callback.scrollWheel(event)
+  else
+    inherited scrollWheel(event);
+end;
+
+{ Metal Utilities }
 
 function MTLCreateContext (control: TMetalControl): TMetalContext;
 begin
 	result := MTLCreateContext(control.renderView);
 end;
 
-{=============================================}
-{@! ___METAL RENDERER___ } 
-{=============================================}
+{ MTKRenderer }
+
 procedure TMTKRenderer.mtkView_drawableSizeWillChange (fromView: MTKView; size: CGSize);
 begin
 end;
@@ -119,9 +143,8 @@ begin
 	result := self;
 end;
 
-{=============================================}
-{@! ___METAL CONTROL___ } 
-{=============================================}
+{ MetalBaseControl}
+
 constructor TMetalBaseControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -139,10 +162,9 @@ var
  	superview: NSView; 
  	device: MTLDeviceProtocol;
 begin
-
-	// NOTE: do we own this??
+	// NOTE: do we own device?
 	device := MTLCreateSystemDefaultDevice;
-	renderView := MTKView.alloc.initWithFrame_device(CGRectMake(0, 0, 0, 0), device);
+	renderView := TLazMTKView.alloc.initWithFrame_device(CGRectMake(0, 0, 0, 0), device);
 	
 	if renderView.device = nil then
 		begin
@@ -162,6 +184,8 @@ begin
 	// create objc class for render delegate
 	renderer := TMTKRenderer.alloc.init(self);
 	renderView.setDelegate(renderer);
+  
+  TLazMTKView(renderView).callback := TLCLCommonCallback.Create(renderView, self);
 
 	// let the user setup the pipeline now that metal is loaded
 	Prepare;
@@ -220,9 +244,7 @@ begin
     end;
 end;
 
-{=============================================}
-{@! ___LAZARUS___ } 
-{=============================================}
+{ Lazarus }
 
 procedure Register;
 begin
