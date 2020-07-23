@@ -291,7 +291,7 @@ begin
 
 	SmallHouseMesh.Load(view.device, ResourcePath('smallhouse', 'h'));
 
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.libraryName := ResourcePath('SmallHouse', 'metallib');
 	pipeline := MTLCreatePipeline(options);
 

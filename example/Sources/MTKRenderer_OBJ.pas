@@ -176,7 +176,7 @@ begin
 			indexBuffer := view.device.newBufferWithBytes_length_options(indices.list, indices.count * sizeof(UInt32), MTLResourceOptionCPUCacheModeDefault);			
 		end;
 
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.libraryName := ResourcePath('Teapot_Packed', 'metallib');
 	// NOTE: why don't we need this??
 	//options.vertexDescriptor := teapotMesh.GetVertexDescriptor;

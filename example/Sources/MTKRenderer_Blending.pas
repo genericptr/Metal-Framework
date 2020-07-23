@@ -132,16 +132,20 @@ begin
 	MTLMakeContextCurrent(context);
 
 	// library
-	libraryOptions := TMetalLibraryOptions.Default;
-	libraryOptions.name := ResourcePath('Blending', 'metallib');
+	libraryOptions := TMetalLibraryOptions.Create;
+	//libraryOptions.name := ResourcePath('Blending', 'metallib');
+
+	libraryOptions.name := '/Users/ryanjoseph/Developer/Projects/FPC/Metal-Framework/example/Shaders/Blending.metal';
+	libraryOptions.preprocessorMacros := NSDictionary.dictionaryWithObject_forKey(NSNull.null, NSSTR('MY_MACRO'));
+
 	shaderLibrary := MTLCreateLibrary(libraryOptions);
 
 	// shaders
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.shaderLibrary := shaderLibrary;
 	defaultShader := MTLCreatePipeline(options);
 
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.shaderLibrary := shaderLibrary;
 
 	options.pipelineDescriptor := MTLCreatePipelineDescriptor;

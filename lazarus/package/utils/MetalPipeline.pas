@@ -64,7 +64,7 @@ type
 	end;
 
 type
-	TMetalLibraryOptions = record
+	TMetalLibraryOptions = class
 		public
 			name: string;													// path to compiled .metallib file OR .metal file which will be compiled at runtime
 			preprocessorMacros: NSDictionary;			// A list of preprocessor macros to apply when compiling the library source.
@@ -74,12 +74,11 @@ type
 																						// floating-point arithmetic that may violate the IEEE 754 standard.
 			languageVersion: MTLLanguageVersion;	// The language version used to interpret the library source code.
 		public
-			class function Default: TMetalLibraryOptions; static;
-			constructor Create (_name: string);
+			constructor Create (_name: string = '');
 	end;
 
 type
-	TMetalPipelineOptions = record
+	TMetalPipelineOptions = class
 		public
 			libraryName: string;					// path to compiled .metallib file
 			shaderLibrary: TMetalLibrary;	// metal library to locate shader functions
@@ -90,7 +89,7 @@ type
 			vertexDescriptor: MTLVertexDescriptor;
 			pipelineDescriptor: MTLRenderPipelineDescriptor;
 		public
-			class function Default: TMetalPipelineOptions; static;
+			constructor Create;
 	end;
 
 { Drawing }
@@ -232,24 +231,19 @@ end;
 constructor TMetalLibraryOptions.Create (_name: string);
 begin
 	name := _name;
+	preprocessorMacros := nil;
+	fastMathEnabled := true;
 end;
 
-class function TMetalLibraryOptions.Default: TMetalLibraryOptions;
+constructor TMetalPipelineOptions.Create;
 begin
-	result.name := '';
-	result.preprocessorMacros := nil;
-	result.fastMathEnabled := true;
-end;
-
-class function TMetalPipelineOptions.Default: TMetalPipelineOptions;
-begin
-	result.libraryName := '';
-	result.vertexShader := 'vertexShader';
-	result.fragmentShader := 'fragmentShader';
-	result.kernelFunction := '';
-	result.vertexDescriptor := nil;
-	result.shaderLibrary := nil;
-	result.pipelineDescriptor := nil;
+	libraryName := '';
+	vertexShader := 'vertexShader';
+	fragmentShader := 'fragmentShader';
+	kernelFunction := '';
+	vertexDescriptor := nil;
+	shaderLibrary := nil;
+	pipelineDescriptor := nil;
 end;
 
 {=============================================}

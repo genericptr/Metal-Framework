@@ -138,7 +138,7 @@ begin
 	context := MTLCreateContext(view);
 	MTLMakeContextCurrent(context);
 
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.libraryName := ResourcePath('Transforms', 'metallib');
 	
 	uniformBuffer := view.device.newBufferWithLength_options(sizeof(TAAPLUniforms), MTLResourceOptionCPUCacheModeDefault);

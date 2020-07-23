@@ -166,19 +166,19 @@ begin
 	context.MakeCurrent;
 
 	// library
-	libraryOptions := TMetalLibraryOptions.Default;
+	libraryOptions := TMetalLibraryOptions.Create;
 	libraryOptions.name := ResourcePath('Compute', 'metallib');
 	shaderLibrary := MTLCreateLibrary(libraryOptions);
 
 	// render shader
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.shaderLibrary := shaderLibrary;
 	options.vertexShader := 'vertexShader';
 	options.fragmentShader := 'samplingShader';
 	renderShader := MTLCreatePipeline(options);
 
 	// compute shader
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.shaderLibrary := shaderLibrary;
 	options.kernelFunction := 'grayscaleKernel';
 	computeShader := MTLCreatePipeline(options);

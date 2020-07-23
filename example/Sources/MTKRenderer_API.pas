@@ -99,7 +99,7 @@ begin
 	context := MTLCreateContext(view);
 	MTLMakeContextCurrent(context);
 
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.libraryName := ResourcePath('Color', 'metallib');
 	options.vertexShader := 'vertexShader';
 	options.fragmentShader := 'fragmentShader';

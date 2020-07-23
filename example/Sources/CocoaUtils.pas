@@ -71,11 +71,9 @@ procedure Fatal (condition: boolean; msg: string = ''; error: NSError = nil);
 begin
 	if condition then
 		begin
-			if error = nil then
-				writeln(msg)
-			else
-				writeln(msg+' -> '+error.localizedDescription.UTF8String);
-			raise Exception.Create('fatal');
+			if error <> nil then
+				msg := msg+' -> '+error.localizedDescription.UTF8String;
+			raise Exception.Create(msg);
 		end;
 end;
 

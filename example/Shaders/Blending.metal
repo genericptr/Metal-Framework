@@ -3,6 +3,7 @@
 
 using namespace metal;
 
+
 struct TexVertex {
     float2 position;
     float2 texCoord;
@@ -40,7 +41,11 @@ fragment float4 fragmentShader( ProjectedVertex in              [[ stage_in ]],
 {
     constexpr sampler textureSampler(mag_filter::linear, min_filter::linear);
 
+    #ifdef MY_MACRO
+    const half4 colorSample = colorTexture.sample(textureSampler, in.texCoord) * 0.5;
+    #else
     const half4 colorSample = colorTexture.sample(textureSampler, in.texCoord);
+    #endif
 
    return float4(colorSample);
 }

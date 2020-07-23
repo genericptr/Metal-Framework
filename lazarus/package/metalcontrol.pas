@@ -40,6 +40,7 @@ type
 		public
 			constructor Create(AOwner: TComponent); override;
 			procedure SetPreferredFrameRate(newValue: integer);
+			procedure MakeCurrent;
 		protected
 			procedure RealizeBounds; override;
 			procedure CreateWnd; override;
@@ -155,6 +156,11 @@ end;
 procedure TMetalBaseControl.SetPreferredFrameRate(newValue: integer);
 begin
 	context.SetPreferredFrameRate(newValue);
+end;
+
+procedure TMetalBaseControl.MakeCurrent;
+begin
+	context.MakeCurrent;
 end;
 
 procedure TMetalBaseControl.LoadMetal;

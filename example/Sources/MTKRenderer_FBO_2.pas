@@ -213,12 +213,12 @@ begin
 	worldUniforms.lightColor := V3(1, 0, 0);
 
 	// gui shader
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.libraryName := ResourcePath('GUI', 'metallib');
 	guiShader := MTLCreatePipeline(options);
 
 	// model shader
-	options := TMetalPipelineOptions.Default;
+	options := TMetalPipelineOptions.Create;
 	options.libraryName := ResourcePath('Teapot_FBO', 'metallib');
 
 	options.pipelineDescriptor := MTLCreatePipelineDescriptor;
